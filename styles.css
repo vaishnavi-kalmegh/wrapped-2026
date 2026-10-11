@@ -29,3 +29,61 @@ html[data-theme="mono"]{--bg:#111;--ink:#f4f4f4;--muted:#b0b0b0;--lime:#f4f4f4;-
 .history-help p{color:var(--muted);font-size:13px;line-height:1.65}
 .history-help a{color:var(--lime);text-underline-offset:3px}
 .visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+
+/* Three complete visual worlds */
+:root{color-scheme:dark}
+html[data-theme="spotify"]{--bg:#101010;--ink:#f7f7f7;--muted:#b8b8b8;--lime:#1ed760;--pink:#ff3ea5;--orange:#ff6b35;--lilac:#a879ff;--line:#303030;--panel:#181818}
+html[data-theme="spotify"] .hero{background:radial-gradient(ellipse at 82% 35%,#244a34 0,transparent 42%),var(--panel)}
+html[data-theme="spotify"] .disc{box-shadow:0 0 0 13px #222,0 0 0 15px var(--lime),0 20px 50px #0009}
+html[data-theme="spotify"] .button-bright{background:var(--lime);color:#07170d}
+html[data-theme="spotify"] .button:hover{box-shadow:5px 5px 0 #ff3ea5}
+html[data-theme="spotify"] .stat-card{border-radius:4px;transform:rotate(-.5deg)}
+html[data-theme="spotify"] .stat-card:nth-child(even){transform:rotate(.6deg)}
+html[data-theme="spotify"] .panel{border-radius:8px}
+html[data-theme="spotify"] .hero h1{letter-spacing:-.09em}
+html[data-theme="spotify"] .sticker{border-radius:2px}
+html[data-theme="y2k"]{--bg:#fff0fa;--ink:#33133e;--muted:#825d89;--lime:#ff5bc8;--pink:#ff8bdc;--orange:#8ee8ff;--lilac:#bca0ff;--line:#efb8e7;--panel:#fffaff;color-scheme:light}
+html[data-theme="y2k"] body{background:radial-gradient(circle at 10% 12%,#ffe0f6 0,transparent 25%),radial-gradient(circle at 90% 40%,#dff8ff 0,transparent 28%),var(--bg)}
+html[data-theme="y2k"] body:before{opacity:.12;background-image:radial-gradient(#d65ac7 1px,transparent 1px);background-size:18px 18px}
+html[data-theme="y2k"] .panel{box-shadow:0 8px 0 #e7b6ef,0 0 0 1px #fff}
+html[data-theme="y2k"] .hero{background:radial-gradient(ellipse at 82% 35%,#f5c8ff 0,transparent 46%),linear-gradient(135deg,#fffaff,#ffe9f8 65%,#e8faff)}
+html[data-theme="y2k"] .hero h1{color:#512064;text-shadow:3px 3px 0 #ffb2e8}
+html[data-theme="y2k"] .chaos{color:#ee39a9;text-shadow:3px 3px 0 #9b79ff}
+html[data-theme="y2k"] .disc{background:repeating-radial-gradient(circle at center,#e9c8ff 0 2px,#d8b2ef 3px 4px,#b7a3ff 5px 7px);box-shadow:0 0 0 13px #f7d7ff,0 0 0 16px #ff65c8,0 20px 50px #b26ab855}
+html[data-theme="y2k"] .disc-label{background:linear-gradient(135deg,#ff69cb,#9e87ff);color:#fff}
+html[data-theme="y2k"] .button-bright{background:linear-gradient(110deg,#ff6acb,#a68bff);color:#fff}
+html[data-theme="y2k"] .button-light{background:#dffaff;color:#35113f}
+html[data-theme="y2k"] .button:hover{box-shadow:5px 5px 0 #8ee8ff}
+html[data-theme="y2k"] .eyebrow,html[data-theme="y2k"] .field-label,html[data-theme="y2k"] code,html[data-theme="y2k"] .history-help a{color:#c42a9c}
+html[data-theme="y2k"] .stat-card{border:2px solid #fff;border-radius:20px;box-shadow:4px 5px 0 #d7a6ec}
+html[data-theme="y2k"] .stat-pink{background:linear-gradient(145deg,#ffc5ed,#ff8bdc)}
+html[data-theme="y2k"] .stat-lime{background:linear-gradient(145deg,#d8faff,#8ee8ff)}
+html[data-theme="y2k"] .stat-orange{background:linear-gradient(145deg,#e6d8ff,#bca0ff)}
+html[data-theme="y2k"] .stat-lilac{background:linear-gradient(145deg,#ffe2f5,#ffc2dc)}
+html[data-theme="y2k"] .stat-card,html[data-theme="y2k"] .stat-card strong{color:#411748}
+html[data-theme="y2k"] .sticker{border:2px solid #fff;border-radius:12px;box-shadow:4px 5px 0 #c47ad7}
+html[data-theme="y2k"] .sticker-one{border-radius:50%}
+html[data-theme="y2k"] textarea{background:#fffaff;color:var(--ink);border-color:#e7a5dc}
+html[data-theme="y2k"] .live-dot{box-shadow:0 0 14px #ff54c8}
+html[data-theme="futuristic"]{--bg:#e7e9ec;--ink:#161a20;--muted:#5d6670;--lime:#aeb9c5;--pink:#d4d9df;--orange:#9aa6b3;--lilac:#c4cbd2;--line:#aeb6bf;--panel:#f5f6f7;color-scheme:light}
+html[data-theme="futuristic"] body{background:linear-gradient(145deg,#f5f6f7,#dce1e6 45%,#f8f9fa)}
+html[data-theme="futuristic"] body:before{opacity:.13;background-image:linear-gradient(120deg,transparent 49.8%,#68727c 50%,transparent 50.2%);background-size:32px 32px}
+html[data-theme="futuristic"] .panel{border-radius:5px;border-color:#9ba4ad;box-shadow:0 8px 22px #48515b18}
+html[data-theme="futuristic"] .hero{background:linear-gradient(125deg,#fafbfc,#d8dde2 55%,#f0f2f4)}
+html[data-theme="futuristic"] .eyebrow,html[data-theme="futuristic"] .field-label,html[data-theme="futuristic"] code,html[data-theme="futuristic"] .history-help a{color:#495560}
+html[data-theme="futuristic"] .chaos{color:#343c45;text-shadow:3px 3px 0 #c6cdd4}
+html[data-theme="futuristic"] .disc{background:repeating-radial-gradient(circle at center,#adb5be 0 2px,#dce0e4 3px 4px,#838d98 5px 7px);box-shadow:0 0 0 13px #d5dae0,0 0 0 16px #6f7a85,0 20px 50px #3335}
+html[data-theme="futuristic"] .disc-label{background:linear-gradient(135deg,#222831,#7d8996);color:#f4f6f8}
+html[data-theme="futuristic"] .button-bright{background:linear-gradient(120deg,#242a31,#626e7b);color:#fff}
+html[data-theme="futuristic"] .button-light{background:#d7dce1;color:#1b2026;border:1px solid #9ba4ad}
+html[data-theme="futuristic"] .button:hover{box-shadow:5px 5px 0 #9da8b3}
+html[data-theme="futuristic"] .stat-card{border:1px solid #929ca7;border-radius:5px;background:linear-gradient(135deg,#f8f9fa,#cfd5db);color:#1b2026;box-shadow:inset 0 1px #fff,0 5px 12px #424c5718}
+html[data-theme="futuristic"] .stat-pink,html[data-theme="futuristic"] .stat-lime,html[data-theme="futuristic"] .stat-orange,html[data-theme="futuristic"] .stat-lilac{background:linear-gradient(135deg,#fafbfc,#c6cdd4)}
+html[data-theme="futuristic"] .sticker{background:linear-gradient(145deg,#f7f8f9,#b7c0c9);color:#20262d;border:1px solid #87919b;box-shadow:3px 4px 0 #7c8792;border-radius:3px}
+html[data-theme="futuristic"] .spark{color:#515c67}
+html[data-theme="futuristic"] textarea{background:#f9fafb;color:#1a2026;border-color:#9da7b1}
+html[data-theme="futuristic"] .heat-cell[data-level="1"]{background:#d7dce1}
+html[data-theme="futuristic"] .heat-cell[data-level="2"]{background:#aeb7c1}
+html[data-theme="futuristic"] .heat-cell[data-level="3"]{background:#7d8996}
+html[data-theme="futuristic"] .heat-cell[data-level="4"]{background:#353e48}
