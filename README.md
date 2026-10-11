@@ -35,3 +35,4 @@ The selected files are processed locally in your browser. They are not uploaded 
 Static HTML/CSS/JavaScript; no framework, no build step, no backend, no data persistence.
 
 Unofficial fan project; not affiliated with Spotify.
+
