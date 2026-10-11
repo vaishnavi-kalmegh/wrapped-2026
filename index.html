@@ -39,13 +39,13 @@
     </section>
 
     <section class="section-head" id="data">
-      <div><p class="eyebrow">01 / THE RECEIPTS</p><h2>Bring the evidence.</h2></div>
+      <div><p class="eyebrow">THE RECEIPTS</p><h2>Bring the evidence.</h2></div>
       <p>Choose one or more Spotify Extended Streaming History JSON files. They're analyzed in this browser and never uploaded by this app.</p>
     </section>
     <section class="panel data-panel">
-      <div class="upload-zone">
+      <details class="history-help"><summary>How to download your Spotify listening history</summary><ol><li>Open Spotify’s <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener noreferrer">Account Privacy page</a> and sign in.</li><li>Find <b>Download your data</b> and request <b>Extended streaming history</b>.</li><li>Confirm the request if Spotify emails you, then wait for Spotify to prepare the archive. It can take up to 30 days.</li><li>Extract the archive on your computer and select the listening-history <code>.json</code> files below. Multiple files are supported.</li></ol><p><b>Privacy:</b> Never share your raw export publicly. This page reads files in your browser; it does not send them to a server.</p><p><a href="https://support.spotify.com/in-en/article/understanding-your-data/" target="_blank" rel="noopener noreferrer">Spotify’s official data guide ↗</a></p></details><div class="upload-zone">
         <div class="upload-icon">↥</div>
-        <div><h3>Drop your listening history</h3><p>Select Spotify streaming-history JSON files, usually named <code>Streaming_History</code> or <code>endsong</code>. Multiple files are supported.</p></div>
+        <div><h3>Choose your listening history</h3><p>Select Spotify streaming-history JSON files, usually named <code>Streaming_History</code> or <code>endsong</code>. Multiple files are supported.</p></div>
         <label class="button button-light" for="historyFiles">CHOOSE JSON FILES</label>
         <input id="historyFiles" type="file" accept=".json,application/json" multiple>
         <p class="tiny" id="fileStatus" aria-live="polite">Waiting for your data. Nothing is calculated yet.</p>
@@ -55,7 +55,7 @@
     </section>
 
     <section class="section-head">
-      <div><p class="eyebrow">02 / THE NUMBERS</p><h2>Your listening lore.</h2></div>
+      <div><p class="eyebrow">THE NUMBERS</p><h2>Your listening lore.</h2></div>
       <span class="data-badge" id="dataBadge">NO DATA LOADED</span>
     </section>
     <section class="stats-grid" id="statsGrid">
@@ -71,11 +71,11 @@
     </section>
 
     <section class="section-head">
-      <div><p class="eyebrow">03 / THE PLOT TWIST</p><h2>Press play on your year.</h2></div>
+      <div><p class="eyebrow">THE PLOT TWIST</p><h2>Press play on your year.</h2></div>
       <p>Animated, full-screen-style story slides built from your uploaded records. Use the arrows or keyboard to move through the story.</p>
     </section>
     <section class="panel story-panel">
-      <div class="story-topline"><span class="eyebrow">YOUR RECAP / STORY MODE</span><span class="tiny" id="storyCounter">0 / 0</span></div>
+      <div class="story-topline"><span class="eyebrow">YOUR RECAP / STORY MODE</span><span class="tiny visually-hidden" id="storyCounter" aria-live="polite">Story progress</span></div>
       <div class="story-progress" id="storyProgress" aria-label="Story progress"></div>
       <article class="story-slide" id="storySlide" aria-live="polite">
         <p class="eyebrow">WAITING FOR THE RECEIPTS</p><h3>Your year has a soundtrack.</h3><p>Upload your streaming history to unlock your personalized story.</p>
@@ -84,7 +84,7 @@
     </section>
 
     <section class="section-head">
-      <div><p class="eyebrow">04 / ACTIVITY LOG</p><h2>When the soundtrack happened.</h2></div>
+      <div><p class="eyebrow">ACTIVITY LOG</p><h2>When the soundtrack happened.</h2></div>
       <p>Daily activity and monthly totals are based only on dated track records in the selected export.</p>
     </section>
     <section class="activity-grid">
@@ -93,13 +93,13 @@
     </section>
 
     <section class="section-head">
-      <div><p class="eyebrow">05 / TROPHIES & DELUSIONS</p><h2>Your evidence-based awards.</h2></div>
+      <div><p class="eyebrow">TROPHIES & DELUSIONS</p><h2>Your evidence-based awards.</h2></div>
       <p>Playful labels with transparent rules. They describe the records—not your personality, mood, or mental health.</p>
     </section>
     <section class="awards-grid" id="awardsGrid"><article class="panel award-card"><span class="award-icon">🏆</span><h3>Awards are locked.</h3><p>Upload history to see which records qualify.</p></article></section>
 
     <section class="section-head">
-      <div><p class="eyebrow">06 / FRIEND LORE</p><h2>Compare soundtracks.</h2></div>
+      <div><p class="eyebrow">FRIEND LORE</p><h2>Compare soundtracks.</h2></div>
       <p>Choose a second person's export only with their permission. Comparison runs locally in this browser; neither file is sent to a server.</p>
     </section>
     <section class="panel compare-panel">
@@ -111,7 +111,7 @@
     </section>
 
     <section class="section-head">
-      <div><p class="eyebrow">07 / PERSONAL DLC</p><h2>Life Wrapped.</h2></div>
+      <div><p class="eyebrow">PERSONAL DLC</p><h2>Life Wrapped.</h2></div>
       <p>Your life recap comes from what you choose to tell us. Nothing about your personal life is inferred from music.</p>
     </section>
     <section class="panel life-panel">
