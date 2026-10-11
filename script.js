@@ -49,7 +49,23 @@ function applyTheme(theme) {
  const wait=$('storySlide');if(wait&&!slides.length){const eyebrow=wait.querySelector('.eyebrow'),h=wait.querySelector('h3'),p=wait.querySelector('p:not(.eyebrow)');if(eyebrow)eyebrow.textContent=t.storyWait;if(h)h.textContent=t.storyTitle;if(p)p.textContent=t.storyCopy}
  const footer=document.querySelector('footer span:nth-child(2)');if(footer)footer.textContent=t.footer;
  const wordmark=document.querySelector('.wordmark span');if(wordmark)wordmark.textContent=theme==='spotify'?'.exe':theme==='y2k'?'✧exe':'//exe';
- if(slides.length) { const slide=slides[slideIndex]; if(theme==='y2k'){slide.eyebrow=slide.eyebrow.replace('YOUR RECEIPTS','THE RECEIPTS').replace('TIME IN THE MIX','MINUTES OF MAIN-CHARACTER ENERGY');} renderSlide(); }
+ const labels = theme==='y2k'
+  ? ['MINUTES IN YOUR FEELS','ARTISTS IN YOUR ORBIT','PLAY EVENTS, ICON','YOUR #1 OBSESSION']
+  : theme==='futuristic'
+   ? ['LISTENING DURATION','UNIQUE ARTIST NODES','TRACK PLAY EVENTS','PRIMARY TRACK']
+   : ['TIME SPENT LISTENING','UNIQUE ARTISTS','TRACK PLAY EVENTS','YOUR #1 TRACK'];
+ document.querySelectorAll('.stat-label').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]});
+ const storyEyebrow=document.querySelector('.story-topline .eyebrow');
+ if(storyEyebrow)storyEyebrow.textContent=theme==='y2k'?'YOUR YEAR, THE GLITTER CUT ✧':theme==='futuristic'?'RECAP SEQUENCE // ACTIVE':'YOUR RECAP / STORY MODE';
+ const btns={storyPrev:theme==='y2k'?'← BACK, BESTIE':theme==='futuristic'?'← PREVIOUS FRAME':'← PREVIOUS',downloadCard:theme==='y2k'?'↓ SAVE THE SLAY ✨':theme==='futuristic'?'↓ EXPORT FRAME':'↓ SAVE CARD',storyNext:theme==='y2k'?'NEXT PLOT TWIST ✧':theme==='futuristic'?'NEXT FRAME ↗':'NEXT SLIDE ↗',resetData:theme==='y2k'?'RESET THE LORE ✦':theme==='futuristic'?'CLEAR SESSION DATA':'RESET MY DATA',buildLife:theme==='y2k'?'MAKE MY LORE ✨':theme==='futuristic'?'COMPILE EVENT LOG ↗':'MAKE MY LIFE RECAP ↗'};
+ Object.entries(btns).forEach(([id,value])=>{const el=$(id);if(el){if(id==='storyNext'&&slides.length&&slideIndex===slides.length-1)el.textContent=theme==='y2k'?'THE END, ICON ✧':theme==='futuristic'?'SEQUENCE COMPLETE ✓':'END OF STORY ✓';else el.textContent=value}});
+ const compareTitle=document.querySelector('.compare-copy h3');if(compareTitle)compareTitle.textContent=theme==='y2k'?'Two besties. One shared bop era.':theme==='futuristic'?'Initialize cross-profile comparison.':'Two playlists enter. Shared lore leaves.';
+ const lifeTitle=document.querySelector('.life-intro h3');if(lifeTitle)lifeTitle.textContent=theme==='y2k'?'Dump the lore, diva.':theme==='futuristic'?'Enter user-defined events.':'Dump the lore.';
+ const storyButton=$('storyNext');if(storyButton&&storyButton.disabled&&!slides.length)storyButton.textContent=theme==='y2k'?'NEXT PLOT TWIST ✧':theme==='futuristic'?'NEXT FRAME ↗':'NEXT SLIDE ↗';
+ if(slides.length) { 
+   if(mine) buildSlides(mine);
+   else renderSlide();
+ }
 }
 
 const YEAR = 2026, fmt = n => new Intl.NumberFormat().format(n), clean = v => String(v ?? '').trim();
