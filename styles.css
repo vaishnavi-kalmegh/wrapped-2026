@@ -14,3 +14,5 @@ html[data-theme="mono"]{--bg:#111;--ink:#f4f4f4;--muted:#b0b0b0;--lime:#f4f4f4;-
 @keyframes slideIn{from{opacity:.35;transform:translateY(12px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:760px){.top-actions{gap:8px}.top-note{font-size:9px}.theme-label{display:none}.data-actions{align-items:flex-start;flex-direction:column}.activity-grid{grid-template-columns:1fr}.heatmap{grid-template-columns:repeat(14,minmax(6px,1fr));gap:4px}.awards-grid{grid-template-columns:1fr 1fr}.story-panel{padding:15px}.story-slide{min-height:300px}.compare-results{grid-template-columns:1fr 1fr}.compare-metric:last-of-type{grid-column:1/-1}}
 @media(max-width:430px){.top-actions .top-note{display:none}.awards-grid{grid-template-columns:1fr}.compare-results{grid-template-columns:1fr}.compare-metric:last-of-type{grid-column:auto}.story-controls .button{padding:12px 10px;font-size:10px}.heatmap{gap:3px}}
+
+.story-slide.story-refresh{animation:slideIn .42s ease both}
