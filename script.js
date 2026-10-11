@@ -112,7 +112,70 @@ function buildSlides(s){const top=s.tracks[0],artist=s.artists[0],month=['Januar
 ];slideIndex=0;renderSlide()}
 function renderSlide(){const el=$('storySlide');el.replaceChildren();if(!slides.length)return;const s=slides[slideIndex],ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');ey.className='eyebrow';ey.textContent=s.eyebrow;h.textContent=s.title;p.textContent=s.body;if(s.number){const n=document.createElement('div');n.className='story-number';n.textContent=s.number;el.append(ey,n,h,p)}else el.append(ey,h,p);$('storyCounter').textContent=(slideIndex+1)+' / '+slides.length;const prog=$('storyProgress');prog.replaceChildren();slides.forEach((_,i)=>{const x=document.createElement('span');if(i<=slideIndex)x.className='active';prog.append(x)});$('storyPrev').disabled=slideIndex===0;$('storyNext').disabled=slideIndex===slides.length-1;$('downloadCard').disabled=false;$('storyNext').textContent=slideIndex===slides.length-1?'END OF STORY ✓':'NEXT SLIDE ↗';el.classList.remove('story-refresh');void el.offsetWidth;el.classList.add('story-refresh')}
 function wrapText(ctx,text,x,y,width,lineHeight){let line='';for(const word of String(text).split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>width&&line){ctx.fillText(line,x,y);line=word;y+=lineHeight}else line=test}if(line)ctx.fillText(line,x,y)}
-function downloadCard(){if(!slides.length)return;const s=slides[slideIndex],canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;const c=canvas.getContext('2d'),theme=document.documentElement.dataset.theme,pal={chaos:['#11110f','#d7ff3f','#ff5ba8','#f5f3e9'],afterglow:['#170f1c','#ffb6d5','#c8b6ff','#fff1f5'],mono:['#111','#f4f4f4','#999','#f4f4f4']},[bg,accent,accent2,ink]=pal[theme]||pal.chaos;c.fillStyle=bg;c.fillRect(0,0,1080,1920);if(theme==='y2k'){for(let i=0;i<42;i++){c.fillStyle=i%2?'#ff70ce':'#9e87ff';c.font='24px sans-serif';c.fillText('✦',(i*137)%1030,100+((i*211)%1700))}}c.fillStyle=accent2;c.beginPath();c.arc(880,280,270,0,Math.PI*2);c.fill();c.fillStyle=accent;c.beginPath();c.arc(900,280,180,0,Math.PI*2);c.fill();c.fillStyle=bg;c.beginPath();c.arc(900,280,92,0,Math.PI*2);c.fill();c.fillStyle=ink;c.font='500 28px monospace';c.fillText('WRAPPED.exe / 2026',72,110);c.fillStyle=accent;c.font='700 30px monospace';wrapText(c,s.eyebrow.toUpperCase(),72,570,880,44);c.fillStyle=ink;c.font='700 86px sans-serif';wrapText(c,s.title,72,720,900,102);let y=1000;if(s.number){c.fillStyle=accent;c.font='700 120px sans-serif';c.fillText(s.number,72,1000);y=1120}c.fillStyle=ink;c.font='400 36px sans-serif';wrapText(c,s.body,72,y,900,54);c.fillStyle=accent2;c.font='700 30px monospace';c.fillText('RECEIPTS OVER VIBES.',72,1780);c.fillStyle='#aaa';c.font='24px monospace';c.fillText('Generated locally from your selected history',72,1830);canvas.toBlob(blob=>{if(!blob){$('fileStatus').textContent='This browser could not create the image.';return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='wrapped-2026-story-'+(slideIndex+1)+'.png';a.click();URL.revokeObjectURL(url)},'image/png')}
+function downloadCard(){
+ if(!slides.length)return;
+ const s=slides[slideIndex],canvas=document.createElement('canvas');
+ canvas.width=1080;canvas.height=1920;
+ const c=canvas.getContext('2d'),theme=document.documentElement.dataset.theme;
+ const palettes={
+  spotify:{bg:'#101010',panel:'#191919',accent:'#c8ff00',accent2:'#ff4fa3',ink:'#f7f7f2',muted:'#b7b7ad',footer:'YOUR YEAR. YOUR RECEIPTS.'},
+  y2k:{bg:'#220d35',panel:'#39134d',accent:'#ff91df',accent2:'#a7a0ff',ink:'#fff5ff',muted:'#f5bde9',footer:'STAY SPARKLY. STAY ICONIC. ✧'},
+  futuristic:{bg:'#101317',panel:'#1e242a',accent:'#e9f2f8',accent2:'#8f9da9',ink:'#f4f7f9',muted:'#aeb8c1',footer:'ARCHIVE COMPLETE // SIGNAL VERIFIED'}
+ };
+ const p=palettes[theme]||palettes.spotify;
+ c.fillStyle=p.bg;c.fillRect(0,0,1080,1920);
+ // Framed editorial card; each theme gets its own visual language.
+ c.strokeStyle=p.accent;c.lineWidth=3;c.strokeRect(34,34,1012,1852);
+ c.fillStyle=p.panel;c.fillRect(54,54,972,1812);
+ if(theme==='spotify'){
+  c.fillStyle=p.accent;c.fillRect(54,54,972,16);
+  c.save();c.translate(900,290);c.rotate(-.22);c.fillStyle=p.accent2;c.fillRect(-115,-115,230,230);c.rotate(.44);c.fillStyle=p.accent;c.fillRect(-92,-92,184,184);c.restore();
+  c.fillStyle=p.bg;c.beginPath();c.arc(900,290,52,0,Math.PI*2);c.fill();
+  for(let i=0;i<8;i++){c.fillStyle=i%2?p.accent:p.accent2;c.fillRect(76+i*118,1510+(i%2)*26,70,8)}
+ }else if(theme==='y2k'){
+  const g=c.createLinearGradient(80,80,1000,1840);g.addColorStop(0,'#ff8bdc');g.addColorStop(.48,'#a59aff');g.addColorStop(1,'#68dfff');
+  c.strokeStyle=g;c.lineWidth=9;c.strokeRect(72,72,936,1776);
+  for(let i=0;i<75;i++){
+   const x=(i*137)%1000+40,y=(i*211)%1770+80;
+   c.fillStyle=i%3===0?'#fff4ff':i%2?p.accent:p.accent2;
+   c.font=(i%4===0?'30px':'19px')+' sans-serif';c.fillText(i%5===0?'✧':i%3===0?'✦':'✶',x,y);
+  }
+  const orb=c.createRadialGradient(865,260,12,865,260,205);orb.addColorStop(0,'#fff5ff');orb.addColorStop(.24,'#ff91df');orb.addColorStop(1,'#a7a0ff');
+  c.fillStyle=orb;c.beginPath();c.arc(865,260,145,0,Math.PI*2);c.fill();
+ }else{
+  const metal=c.createLinearGradient(100,100,980,450);metal.addColorStop(0,'#66727d');metal.addColorStop(.25,'#f8fcff');metal.addColorStop(.5,'#7f8b95');metal.addColorStop(.72,'#edf3f7');metal.addColorStop(1,'#58636d');
+  c.strokeStyle=metal;c.lineWidth=10;c.strokeRect(72,72,936,1776);
+  c.strokeStyle='#64717d';c.lineWidth=1;
+  for(let y=180;y<1750;y+=48){c.beginPath();c.moveTo(78,y);c.lineTo(1002,y);c.stroke()}
+  c.fillStyle=metal;c.beginPath();c.arc(865,265,148,0,Math.PI*2);c.fill();
+  c.fillStyle=p.bg;c.beginPath();c.arc(865,265,94,0,Math.PI*2);c.fill();
+  c.strokeStyle=p.accent;c.lineWidth=3;c.beginPath();c.arc(865,265,174,0,Math.PI*2);c.stroke();
+ }
+ c.fillStyle=p.ink;c.font='600 27px monospace';c.fillText(theme==='y2k'?'WRAPPED.exe ✧ YOUR YEAR':theme==='futuristic'?'WRAPPED.exe // AUDIO ARCHIVE':'WRAPPED.exe / 2026',82,132);
+ c.fillStyle=p.accent;c.font='700 28px monospace';
+ const eyebrow=theme==='y2k'?'✧ '+s.eyebrow.toUpperCase()+' ✧':theme==='futuristic'?'// '+s.eyebrow.toUpperCase():s.eyebrow.toUpperCase();
+ wrapText(c,eyebrow,82,520,850,42);
+ c.fillStyle=p.ink;c.font='700 82px sans-serif';wrapText(c,s.title,82,675,850,98);
+ let y=930;
+ if(s.number){
+  const numGrad=c.createLinearGradient(82,0,850,0);numGrad.addColorStop(0,p.accent);numGrad.addColorStop(1,p.accent2);
+  c.fillStyle=numGrad;c.font='700 130px sans-serif';wrapText(c,s.number,82,1000,850,145);y=1180;
+ }
+ c.fillStyle=p.ink;c.font='400 35px sans-serif';wrapText(c,s.body,82,y,850,54);
+ c.fillStyle=p.accent2;c.fillRect(82,1608,916,3);
+ c.fillStyle=p.accent;c.font='700 27px monospace';c.fillText(p.footer,82,1680);
+ c.fillStyle=p.muted;c.font='22px monospace';
+ c.fillText('CARD '+String(slideIndex+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0'),82,1740);
+ c.fillText(theme==='y2k'?'made with real receipts & extra glitter':theme==='futuristic'?'LOCAL PROCESSING // NO DATA UPLOADED':'Generated locally from your selected history',82,1790);
+ canvas.toBlob(blob=>{
+  if(!blob){$('fileStatus').textContent='This browser could not create the image.';return}
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  const safeTheme=theme.replace(/[^a-z0-9-]/gi,'');
+  a.href=url;a.download='wrapped-2026-'+safeTheme+'-card-'+String(slideIndex+1).padStart(2,'0')+'.png';
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('fileStatus').textContent='Saved card '+(slideIndex+1)+' of '+slides.length+' as a '+theme+' PNG. Your history stays in this browser.';
+ },'image/png');
+}
 function renderMine(rows,count){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Processed '+count+' JSON file(s). Found '+fmt(s.plays)+' eligible 2026 track records. Calculations stayed in this browser.';renderCompare()}
 function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
 function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
