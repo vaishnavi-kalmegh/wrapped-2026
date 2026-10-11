@@ -1,7 +1,7 @@
 const $ = id => document.getElementById(id);
 const YEAR = 2026, fmt = n => new Intl.NumberFormat().format(n), clean = v => String(v ?? '').trim();
 let mine = null, friend = null, slides = [], slideIndex = 0;
-function dateOf(r){const v=r.endTime??r.end_time??r.timestamp??r.played_at;if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d}
+function dateOf(r){const v=r.endTime??r.end_time??r.timestamp??r.played_at??r.ts;if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d}
 function trackOf(r){return clean(r.trackName??r.track_name??r.master_metadata_track_name??r.name)}
 function artistsOf(r){const v=r.artistName??r.artist_name??r.master_metadata_album_artist_name??r.artist;return Array.isArray(v)?v.map(clean).filter(Boolean):(clean(v)?[clean(v)]:[])}
 function msOf(r){const n=Number(r.msPlayed??r.ms_played??r.duration_ms??0);return Number.isFinite(n)&&n>0?n:0}
