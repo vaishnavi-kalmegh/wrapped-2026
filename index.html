@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111111">
+  <meta name="description" content="A chaotic, private, data-driven 2026 music and life recap.">
+  <title>WRAPPED.exe — 2026 so far</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="wordmark" href="#" aria-label="Wrapped home">WRAPPED<span>.exe</span></a>
+    <span class="top-note"><i class="live-dot"></i> LOCAL DATA ONLY</span>
+  </header>
+  <main>
+    <section class="hero panel">
+      <div class="hero-copy">
+        <p class="eyebrow">YOUR YEAR, YOUR RECEIPTS // 2026</p>
+        <h1>THE YEAR<br>WAS <span class="chaos">LOUD.</span></h1>
+        <p class="lede">A lovingly unhinged recap of the songs you looped and the life you lived. No fake stats. No imaginary lore.</p>
+        <a class="button button-bright" href="#data">LOAD YOUR DATA <span aria-hidden="true">↘</span></a>
+      </div>
+      <div class="hero-art" aria-label="Decorative album inspired shapes">
+        <div class="sticker sticker-one">NO<br>SKIPS?</div>
+        <div class="disc"><div class="disc-label">2026<br><b>CORE</b></div></div>
+        <div class="sticker sticker-two">MAIN<br>CHARACTER<br>ENERGY ↗</div>
+        <span class="spark spark-a">✳</span><span class="spark spark-b">✦</span>
+      </div>
+      <div class="hero-foot"><span>UNOFFICIAL FAN PROJECT</span><span>SCROLL TO SPIRAL ↓</span></div>
+    </section>
+
+    <section class="section-head" id="data">
+      <div><p class="eyebrow">01 / THE RECEIPTS</p><h2>Bring the evidence.</h2></div>
+      <p>Choose your Spotify Extended Streaming History JSON files. They are analyzed in this browser and are not uploaded anywhere.</p>
+    </section>
+    <section class="panel data-panel">
+      <div class="upload-zone">
+        <div class="upload-icon">↥</div>
+        <div><h3>Drop your listening history</h3><p>Choose one or more <code>.json</code> files extracted from Spotify's data export. Select the files whose names start with <code>Streaming_History</code> or <code>endsong</code>.</p></div>
+        <label class="button button-light" for="historyFiles">CHOOSE JSON FILES</label>
+        <input id="historyFiles" type="file" accept=".json,application/json" multiple>
+        <p class="tiny" id="fileStatus" aria-live="polite">Waiting for your data. Nothing is calculated yet.</p>
+      </div>
+      <div class="privacy-note"><span>🔒</span><span><b>Privacy by design.</b> Files are read locally in your browser. Refreshing the page clears the results. Never commit your raw export to GitHub.</span></div>
+    </section>
+
+    <section class="section-head">
+      <div><p class="eyebrow">02 / THE NUMBERS</p><h2>Your listening lore.</h2></div>
+      <span class="data-badge" id="dataBadge">NO DATA LOADED</span>
+    </section>
+    <section class="stats-grid" id="statsGrid">
+      <article class="stat-card stat-pink"><span class="stat-label">TIME SPENT LISTENING</span><strong id="minutesStat">—</strong><span class="stat-foot" id="hoursStat">Upload history to calculate</span></article>
+      <article class="stat-card stat-lime"><span class="stat-label">UNIQUE ARTISTS</span><strong id="artistsStat">—</strong><span class="stat-foot">Artists in your 2026 plays</span></article>
+      <article class="stat-card stat-orange"><span class="stat-label">TRACKS PLAYED</span><strong id="playsStat">—</strong><span class="stat-foot">Recorded play events in 2026</span></article>
+      <article class="stat-card stat-lilac"><span class="stat-label">YOUR #1 TRACK</span><strong class="stat-track" id="topTrackStat">Not unlocked</strong><span class="stat-foot" id="topTrackArtist">Real data goes here</span></article>
+    </section>
+
+    <section class="rankings">
+      <article class="panel ranking-panel">
+        <div class="panel-title"><p class="eyebrow">TOP FIVE</p><h3>Artists on repeat.</h3></div>
+        <ol class="rank-list" id="topArtists"><li class="empty-row">Your top artists will appear after upload.</li></ol>
+      </article>
+      <article class="panel ranking-panel">
+        <div class="panel-title"><p class="eyebrow">TOP FIVE</p><h3>Soundtrack of the year.</h3></div>
+        <ol class="rank-list" id="topTracks"><li class="empty-row">Your top tracks will appear after upload.</li></ol>
+      </article>
+    </section>
+
+    <section class="section-head">
+      <div><p class="eyebrow">03 / PERSONAL DLC</p><h2>Life Wrapped.</h2></div>
+      <p>Your life recap comes from what you choose to tell us. We will not infer private life events from music data.</p>
+    </section>
+    <section class="panel life-panel">
+      <div class="life-intro"><span class="life-emoji">🧠</span><div><h3>Dump the lore.</h3><p>List memories, wins, obsessions, plot twists, new things you tried, or moments you want to remember. One item per line. This stays in this page and is not saved.</p></div></div>
+      <label for="lifeNotes" class="field-label">YOUR 2026 LORE (SO FAR)</label>
+      <textarea id="lifeNotes" rows="7" placeholder="Finally did the thing…&#10;Unexpected obsession: …&#10;A tiny win that mattered: …&#10;Plot twist of the year: …"></textarea>
+      <div class="life-actions"><span class="tiny">Only the lines you enter are counted or shown.</span><button class="button button-bright" id="buildLife" type="button">MAKE MY LIFE RECAP ↗</button></div>
+      <div id="lifeOutput" class="life-output" hidden aria-live="polite"></div>
+    </section>
+
+    <section class="panel footnote-panel">
+      <p class="eyebrow">TRANSPARENCY CORNER</p>
+      <h3>Receipts over vibes.</h3>
+      <p>Listening minutes are summed from Spotify's recorded <code>msPlayed</code> values for plays dated Jan 1–Dec 31, 2026. Rankings use recorded play events, not Spotify's proprietary Wrapped algorithm. Genre and track popularity are not reliably included in streaming-history exports, so those awards stay locked until we have a trustworthy metadata source.</p>
+      <p class="tiny">This is an unofficial fan-made project and is not affiliated with Spotify.</p>
+    </section>
+  </main>
+  <footer><span>WRAPPED.exe © 2026</span><span>BUILT FOR THE PLOT.</span><a href="#data">BACK TO TOP ↑</a></footer>
+</body>
+</html>
