@@ -1,116 +1,56 @@
-const $ = (id) => document.getElementById(id);
-const YEAR = 2026;
-const fmt = (n) => new Intl.NumberFormat().format(n);
-const clean = (value) => String(value ?? "").trim();
-function getDate(row) {
-  const raw = row.endTime ?? row.end_time ?? row.timestamp ?? row.played_at;
-  if (!raw) return null;
-  const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date;
+const $ = id => document.getElementById(id);
+const YEAR = 2026, fmt = n => new Intl.NumberFormat().format(n), clean = v => String(v ?? '').trim();
+let mine = null, friend = null, slides = [], slideIndex = 0;
+function dateOf(r){const v=r.endTime??r.end_time??r.timestamp??r.played_at;if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d}
+function trackOf(r){return clean(r.trackName??r.track_name??r.master_metadata_track_name??r.name)}
+function artistsOf(r){const v=r.artistName??r.artist_name??r.master_metadata_album_artist_name??r.artist;return Array.isArray(v)?v.map(clean).filter(Boolean):(clean(v)?[clean(v)]:[])}
+function msOf(r){const n=Number(r.msPlayed??r.ms_played??r.duration_ms??0);return Number.isFinite(n)&&n>0?n:0}
+function rowsOf(x){if(Array.isArray(x))return x;for(const k of ['items','streamingHistory','streaming_history','endsong'])if(Array.isArray(x?.[k]))return x[k];return []}
+async function loadFiles(files){const rows=[],errors=[];for(const f of [...files])try{const a=rowsOf(JSON.parse(await f.text()));if(a.length)rows.push(...a);else errors.push(f.name+': no recognized history array')}catch{errors.push(f.name+': invalid JSON')}return{rows,errors,count:files.length}}
+function add(map,key,ms){const v=map.get(key)||{plays:0,ms:0};v.plays++;v.ms+=ms;map.set(key,v)}
+function rank(map){return [...map.entries()].sort((a,b)=>b[1].plays-a[1].plays||b[1].ms-a[1].ms||a[0].localeCompare(b[0]))}
+function summarize(rows){
+ const tm=new Map(),am=new Map(),artists=new Set(),days=new Map(),months=Array(12).fill(0),hours=Array(24).fill(0);let total=0,plays=0;
+ for(const r of rows){const d=dateOf(r);if(!d||d.getUTCFullYear()!==YEAR||!trackOf(r)||!artistsOf(r).length||r.episode_name||r.audiobook_title)continue;
+ const t=trackOf(r),as=artistsOf(r),ms=msOf(r),day=d.toISOString().slice(0,10);plays++;total+=ms;days.set(day,(days.get(day)||0)+ms);months[d.getUTCMonth()]+=ms;hours[d.getUTCHours()]+=ms;add(tm,t+'\u0000'+as.join(', '),ms);as.forEach(a=>{artists.add(a);add(am,a,ms)});
+ }
+ const tracks=rank(tm).map(([key,v])=>{const [name,...rest]=key.split('\u0000');return{name,artist:rest.join('\u0000'),key,...v}});
+ const artistRank=rank(am).map(([name,v])=>({name,...v}));
+ const maxDay=[...days.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
+ return{tracks,artists:artistRank,artistNames:artists,days,months,hours,total,plays,activeDays:days.size,maxDay,maxMonth:months.indexOf(Math.max(...months))};
 }
-function getTrack(row) {
-  return clean(row.trackName ?? row.track_name ?? row.master_metadata_track_name ?? row.name);
-}
-function getArtist(row) {
-  const raw = row.artistName ?? row.artist_name ?? row.master_metadata_album_artist_name ?? row.artist;
-  if (Array.isArray(raw)) return raw.map(clean).filter(Boolean);
-  return clean(raw) ? [clean(raw)] : [];
-}
-function getDuration(row) {
-  const n = Number(row.msPlayed ?? row.ms_played ?? row.ms_played ?? row.duration_ms ?? 0);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
-function getAlbum(row) {
-  return clean(row.albumName ?? row.album_name ?? row.master_metadata_album_album_name);
-}
-function isTrackPlay(row) {
-  return Boolean(getTrack(row)) && !row.episode_name && !row.audiobook_title;
-}
-function makeCounter() { return new Map(); }
-function bump(map, key, duration) {
-  const old = map.get(key) || { plays: 0, ms: 0 };
-  old.plays += 1; old.ms += duration; map.set(key, old);
-}
-function ranked(map) {
-  return [...map.entries()].sort((a,b) => b[1].plays-a[1].plays || b[1].ms-a[1].ms || a[0].localeCompare(b[0]));
-}
-function renderRankings(targetId, rows, kind) {
-  const target = $(targetId);
-  target.replaceChildren();
-  if (!rows.length) {
-    const li = document.createElement('li'); li.className='empty-row';
-    li.textContent='No matching 2026 records found in the selected files.'; target.append(li); return;
-  }
-  rows.slice(0,5).forEach(([name, data]) => {
-    const li = document.createElement('li');
-    const wrap = document.createElement('div');
-    const title = document.createElement('span'); title.className='rank-name'; title.textContent=name;
-    const sub = document.createElement('span'); sub.className='rank-sub';
-    sub.textContent = kind === 'artist' ? 'artist play events' : 'recorded play events';
-    title.append(sub); wrap.append(title);
-    const count = document.createElement('span'); count.className='rank-count'; count.textContent=fmt(data.plays)+' plays';
-    li.append(wrap,count); target.append(li);
-  });
-}
-function renderHistory(rows, fileCount) {
-  const tracks = new Map(), artists = new Map(), artistNames = new Set();
-  let totalMs = 0, eligibleRows = 0;
-  for (const row of rows) {
-    const date = getDate(row);
-    if (!date || date.getFullYear() !== YEAR || !isTrackPlay(row)) continue;
-    const track = getTrack(row);
-    const names = getArtist(row);
-    if (!track || !names.length) continue;
-    const ms = getDuration(row);
-    eligibleRows += 1; totalMs += ms;
-    bump(tracks, track + '\u0000' + names.join(', '), ms);
-    for (const artist of names) { artistNames.add(artist); bump(artists, artist, ms); }
-  }
-  const trackRank = ranked(tracks).map(([key, data]) => [key.split('\u0000')[0] + ' — ' + key.split('\u0000').slice(1).join('\u0000'), data]);
-  const artistRank = ranked(artists);
-  $('minutesStat').textContent = fmt(Math.floor(totalMs/60000));
-  $('hoursStat').textContent = (totalMs/3600000).toFixed(1) + ' hours recorded';
-  $('artistsStat').textContent = fmt(artistNames.size);
-  $('playsStat').textContent = fmt(eligibleRows);
-  $('topTrackStat').textContent = trackRank.length ? trackRank[0][0].split(' — ')[0] : 'No track data';
-  $('topTrackArtist').textContent = trackRank.length ? trackRank[0][0].split(' — ').slice(1).join(' — ') : 'Check selected JSON files';
-  $('dataBadge').textContent = eligibleRows ? '2026 DATA LOADED' : 'NO 2026 PLAYS FOUND';
-  renderRankings('topArtists', artistRank, 'artist');
-  renderRankings('topTracks', trackRank, 'track');
-  $('fileStatus').textContent = 'Processed ' + fileCount + ' JSON file(s). Found ' + fmt(eligibleRows) + ' eligible track-play events dated in 2026.';
-}
-$('historyFiles').addEventListener('change', async (event) => {
-  const files = [...event.target.files];
-  if (!files.length) return;
-  $('fileStatus').textContent = 'Reading selected files locally…';
-  const allRows = [];
-  const errors = [];
-  for (const file of files) {
-    try {
-      const parsed = JSON.parse(await file.text());
-      if (Array.isArray(parsed)) allRows.push(...parsed);
-      else if (Array.isArray(parsed.items)) allRows.push(...parsed.items);
-      else errors.push(file.name + ': JSON did not contain a recognized array');
-    } catch { errors.push(file.name + ': could not parse JSON'); }
-  }
-  if (!allRows.length) {
-    $('fileStatus').textContent = 'No history rows could be read. Choose Spotify streaming-history JSON files. ' + errors.join(' · ');
-    return;
-  }
-  renderHistory(allRows, files.length);
-  if (errors.length) $('fileStatus').textContent += ' Skipped: ' + errors.join(' · ');
-});
-$('buildLife').addEventListener('click', () => {
-  const lines = $('lifeNotes').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  const out = $('lifeOutput'); out.replaceChildren(); out.hidden = false;
-  const title = document.createElement('h3');
-  title.textContent = lines.length ? 'THE LORE, AS SUBMITTED.' : 'THE LORE IS CURRENTLY LOADING…';
-  out.append(title);
-  if (!lines.length) {
-    const p = document.createElement('p'); p.textContent='Add one or more memories above. We will only recap details you actually enter.'; out.append(p); return;
-  }
-  const p = document.createElement('p'); p.textContent='Your recap contains ' + lines.length + ' item' + (lines.length===1?'':'s') + ' you entered. No extra life events were inferred.'; out.append(p);
-  const ul = document.createElement('ul');
-  lines.forEach(line=>{const li=document.createElement('li');li.textContent=line;ul.append(li)});
-  out.append(ul);
-});
+function renderRank(id,arr,kind){const el=$(id);el.replaceChildren();if(!arr.length){const li=document.createElement('li');li.className='empty-row';li.textContent='No matching 2026 records found.';el.append(li);return}
+ arr.slice(0,5).forEach(v=>{const li=document.createElement('li'),wrap=document.createElement('div'),name=document.createElement('span'),sub=document.createElement('span'),count=document.createElement('span');name.className='rank-name';name.textContent=kind==='artist'?v.name:v.name;sub.className='rank-sub';sub.textContent=kind==='artist'?'artist play events':v.artist;name.append(sub);wrap.append(name);count.className='rank-count';count.textContent=fmt(v.plays)+' plays';li.append(wrap,count);el.append(li)})}
+const hoursText=ms=>(ms/3600000).toFixed(1)+' h';
+function renderHeat(s){const el=$('heatmap');el.replaceChildren();const max=Math.max(1,...s.days.values());for(let d=new Date(Date.UTC(YEAR,0,1));d<=new Date(Date.UTC(YEAR,11,31));d.setUTCDate(d.getUTCDate()+1)){const key=d.toISOString().slice(0,10),ms=s.days.get(key)||0,ratio=ms/max,level=!ms?0:ratio<.15?1:ratio<.4?2:ratio<.7?3:4,cell=document.createElement('span');cell.className='heat-cell';cell.dataset.level=level;cell.title=key+': '+hoursText(ms)+' recorded';cell.setAttribute('aria-label',cell.title);cell.tabIndex=0;el.append(cell)}}
+function renderMonths(s){const el=$('monthlyTimeline');el.replaceChildren();const labels=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],max=Math.max(1,...s.months);labels.forEach((label,i)=>{const row=document.createElement('div'),name=document.createElement('span'),track=document.createElement('div'),fill=document.createElement('div'),value=document.createElement('span');row.className='month-row';name.className='month-name';name.textContent=label;track.className='month-track';track.setAttribute('aria-label',label+' '+hoursText(s.months[i]));fill.className='month-fill';fill.style.width=(s.months[i]/max*100)+'%';track.append(fill);value.className='month-value';value.textContent=hoursText(s.months[i]);row.append(name,track,value);el.append(row)})}
+function awards(s){const out=[],top=s.tracks[0],total=s.plays;if(!top)return[{icon:'🔎',title:'No track records yet',detail:'No eligible track + artist records were found for 2026.',proof:'Try selecting all history JSON files.'}];
+ if(top.plays>=2)out.push({icon:'🔁',title:'The Repeat Offender',detail:'Your most-recorded track came back for another round.',proof:top.name+' — '+fmt(top.plays)+' recorded plays'});
+ if(s.artistNames.size>=30&&total>=50)out.push({icon:'🧭',title:'The Artist Explorer',detail:'A wide artist roster across your recorded plays.',proof:fmt(s.artistNames.size)+' unique artist names · '+fmt(total)+' events'});
+ if(total>=10&&top.plays/total>=.1)out.push({icon:'💿',title:'One Track, One Era',detail:'Your top track accounts for at least 10% of recorded track events.',proof:top.name+' — '+(top.plays/total*100).toFixed(1)+'% of events'});
+ if(s.maxDay&&s.maxDay[1]>0)out.push({icon:'⚡',title:'Peak Listening Day',detail:'Your busiest UTC day by recorded listening time.',proof:s.maxDay[0]+' — '+hoursText(s.maxDay[1])});
+ const month=['January','February','March','April','May','June','July','August','September','October','November','December'][s.maxMonth];if(s.months[s.maxMonth]>0)out.push({icon:'📈',title:'The Main Month',detail:'Your biggest month by recorded listening time.',proof:month+' — '+hoursText(s.months[s.maxMonth])});
+ if(s.activeDays>=20)out.push({icon:'📆',title:'Regular on the Rotation',detail:'You have track activity on at least 20 dates.',proof:fmt(s.activeDays)+' active UTC days in 2026'});
+ return out.length?out:[{icon:'🪩',title:'The Open Tab',detail:'Your listening pattern is still taking shape.',proof:fmt(total)+' recorded track events so far'}]}
+function renderAwards(s){const el=$('awardsGrid');el.replaceChildren();awards(s).forEach(a=>{const card=document.createElement('article'),icon=document.createElement('span'),h=document.createElement('h3'),p=document.createElement('p'),proof=document.createElement('span');card.className='panel award-card';icon.className='award-icon';icon.textContent=a.icon;h.textContent=a.title;p.textContent=a.detail;proof.className='award-proof';proof.textContent=a.proof;card.append(icon,h,p,proof);el.append(card)})}
+function buildSlides(s){const top=s.tracks[0],artist=s.artists[0],month=['January','February','March','April','May','June','July','August','September','October','November','December'][s.maxMonth];slides=[
+ {eyebrow:'2026 / YOUR RECEIPTS',title:'Your year had a soundtrack.',body:fmt(s.plays)+' recorded track events in the files you selected. No extrapolated plays.'},
+ {eyebrow:'TIME IN THE MIX',number:fmt(Math.floor(s.total/60000)),title:'minutes recorded.',body:hoursText(s.total)+' total recorded listening time, summed from history durations.'},
+ {eyebrow:'ARTIST ROLL CALL',number:fmt(s.artistNames.size),title:'unique artist names.',body:artist?'Your most-recorded artist was '+artist.name+' with '+fmt(artist.plays)+' events.':'No artist ranking could be calculated.'},
+ {eyebrow:'THE ONE ON REPEAT',title:top?top.name:'No top track yet',body:top?top.artist+' · '+fmt(top.plays)+' recorded plays. Rankings count track + artist records.':'Upload records with track and artist names to unlock this slide.'},
+ {eyebrow:'THE BIG MONTH',title:month,body:hoursText(s.months[s.maxMonth])+' recorded listening time. Monthly totals use UTC timestamps.'},
+ {eyebrow:'2026 SO FAR',title:'Receipts over vibes.',body:'This recap comes from the files you selected. Genre, mood and popularity are not guessed from track names.'}
+];slideIndex=0;renderSlide()}
+function renderSlide(){const el=$('storySlide');el.replaceChildren();if(!slides.length)return;const s=slides[slideIndex],ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');ey.className='eyebrow';ey.textContent=s.eyebrow;h.textContent=s.title;p.textContent=s.body;if(s.number){const n=document.createElement('div');n.className='story-number';n.textContent=s.number;el.append(ey,n,h,p)}else el.append(ey,h,p);$('storyCounter').textContent=(slideIndex+1)+' / '+slides.length;const prog=$('storyProgress');prog.replaceChildren();slides.forEach((_,i)=>{const x=document.createElement('span');if(i<=slideIndex)x.className='active';prog.append(x)});$('storyPrev').disabled=slideIndex===0;$('storyNext').disabled=slideIndex===slides.length-1;$('storyNext').textContent=slideIndex===slides.length-1?'END OF STORY ✓':'NEXT SLIDE ↗';el.classList.remove('story-refresh');void el.offsetWidth;el.classList.add('story-refresh')}
+function wrapText(ctx,text,x,y,width,lineHeight){let line='';for(const word of String(text).split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>width&&line){ctx.fillText(line,x,y);line=word;y+=lineHeight}else line=test}if(line)ctx.fillText(line,x,y)}
+function downloadCard(){if(!slides.length)return;const s=slides[slideIndex],canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;const c=canvas.getContext('2d'),theme=document.documentElement.dataset.theme,pal={chaos:['#11110f','#d7ff3f','#ff5ba8','#f5f3e9'],afterglow:['#170f1c','#ffb6d5','#c8b6ff','#fff1f5'],mono:['#111','#f4f4f4','#999','#f4f4f4']},[bg,accent,accent2,ink]=pal[theme]||pal.chaos;c.fillStyle=bg;c.fillRect(0,0,1080,1920);c.fillStyle=accent2;c.beginPath();c.arc(880,280,270,0,Math.PI*2);c.fill();c.fillStyle=accent;c.beginPath();c.arc(900,280,180,0,Math.PI*2);c.fill();c.fillStyle=bg;c.beginPath();c.arc(900,280,92,0,Math.PI*2);c.fill();c.fillStyle=ink;c.font='500 28px monospace';c.fillText('WRAPPED.exe / 2026',72,110);c.fillStyle=accent;c.font='700 30px monospace';wrapText(c,s.eyebrow.toUpperCase(),72,570,880,44);c.fillStyle=ink;c.font='700 86px sans-serif';wrapText(c,s.title,72,720,900,102);let y=1000;if(s.number){c.fillStyle=accent;c.font='700 120px sans-serif';c.fillText(s.number,72,1000);y=1120}c.fillStyle=ink;c.font='400 36px sans-serif';wrapText(c,s.body,72,y,900,54);c.fillStyle=accent2;c.font='700 30px monospace';c.fillText('RECEIPTS OVER VIBES.',72,1780);c.fillStyle='#aaa';c.font='24px monospace';c.fillText('Generated locally from your selected history',72,1830);canvas.toBlob(blob=>{if(!blob){$('fileStatus').textContent='This browser could not create the image.';return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='wrapped-2026-story-'+(slideIndex+1)+'.png';a.click();URL.revokeObjectURL(url)},'image/png')}
+function renderMine(rows,count){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Processed '+count+' JSON file(s). Found '+fmt(s.plays)+' eligible 2026 track records. Calculations stayed in this browser.';renderCompare()}
+function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
+function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
+$('historyFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('fileStatus').textContent='Reading selected files locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){$('fileStatus').textContent='No history rows could be read. Choose Spotify streaming-history JSON files. '+r.errors.join(' · ');return}renderMine(r.rows,r.count);if(r.errors.length)$('fileStatus').textContent+=' Skipped: '+r.errors.join(' · ')});
+$('friendFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('friendStatus').textContent='Reading the second export locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){friend=null;$('friendStatus').textContent='Could not read a history array. '+r.errors.join(' · ');renderCompare();return}friend=summarize(r.rows);$('friendStatus').textContent='Processed '+r.count+' file(s) locally. '+fmt(friend.plays)+' eligible 2026 track records.';renderCompare()});
+$('storyPrev').addEventListener('click',()=>{if(slideIndex>0){slideIndex--;renderSlide()}});$('storyNext').addEventListener('click',()=>{if(slideIndex<slides.length-1){slideIndex++;renderSlide()}});$('downloadCard').addEventListener('click',downloadCard);
+document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'&&slideIndex<slides.length-1){slideIndex++;renderSlide()}if(e.key==='ArrowLeft'&&slideIndex>0){slideIndex--;renderSlide()}});
+$('themeSelect').addEventListener('change',e=>{document.documentElement.dataset.theme=e.target.value});
+$('resetData').addEventListener('click',()=>{mine=null;friend=null;slides=[];slideIndex=0;$('historyFiles').value='';$('friendFiles').value='';['minutesStat','artistsStat','playsStat'].forEach(id=>$(id).textContent='—');$('hoursStat').textContent='Upload history to calculate';$('topTrackStat').textContent='Not unlocked';$('topTrackArtist').textContent='Real data goes here';$('dataBadge').textContent='NO DATA LOADED';$('fileStatus').textContent='Waiting for your data. Nothing is calculated yet.';$('friendStatus').textContent='No comparison data loaded.';renderRank('topArtists',[],'artist');renderRank('topTracks',[],'track');$('heatmap').replaceChildren();const e=document.createElement('p');e.className='empty-row';e.textContent='Upload history to build your heatmap.';$('heatmap').append(e);$('monthlyTimeline').replaceChildren();const m=e.cloneNode();m.textContent='Your monthly timeline will appear after upload.';$('monthlyTimeline').append(m);$('awardsGrid').replaceChildren();const a=document.createElement('article');a.className='panel award-card';a.innerHTML='<span class="award-icon">🏆</span><h3>Awards are locked.</h3><p>Upload history to see which records qualify.</p>';$('awardsGrid').append(a);$('storySlide').replaceChildren();const h=document.createElement('h3'),p=document.createElement('p');h.textContent='Your year has a soundtrack.';p.textContent='Upload your streaming history to unlock your personalized story.';$('storySlide').append(h,p);$('storyCounter').textContent='0 / 0';$('storyProgress').replaceChildren();$('storyPrev').disabled=true;$('storyNext').disabled=true;$('storyNext').textContent='NEXT SLIDE ↗';$('compareResults').replaceChildren();$('compareResults').hidden=true});
+$('buildLife').addEventListener('click',()=>{const lines=$('lifeNotes').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),out=$('lifeOutput');out.replaceChildren();out.hidden=false;const h=document.createElement('h3');h.textContent=lines.length?'THE LORE, AS SUBMITTED.':'THE LORE IS CURRENTLY LOADING…';out.append(h);if(!lines.length){const p=document.createElement('p');p.textContent='Add one or more memories above. We will only recap details you actually enter.';out.append(p);return}const p=document.createElement('p');p.textContent='Your recap contains '+lines.length+' item'+(lines.length===1?'':'s')+' you entered. No extra life events were inferred.';out.append(p);const ul=document.createElement('ul');lines.forEach(line=>{const li=document.createElement('li');li.textContent=line;ul.append(li)});out.append(ul)});
