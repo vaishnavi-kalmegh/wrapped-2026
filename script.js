@@ -2,7 +2,7 @@ const $ = id => document.getElementById(id);
 
 const themeCopy = {
  spotify: {
- heroEyebrow:'YOUR YEAR, YOUR RECEIPTS // 2026', heroTitle:'THE YEAR<br>WAS <span class="chaos">LOUD.</span>', heroLede:'A lovingly unhinged recap of the songs you looped and the life you lived. No fake stats. No imaginary lore.',
+ heroEyebrow:'YOUR YEAR, YOUR RECEIPTS // 2026', heroTitle:'THE YEAR<br>WAS <span class="chaos">LOUD.</span>', heroLede:'A lovingly unhinged recap of the songs you looped and the life you lived. No imaginary lore.',
  heroButton:'LOAD YOUR DATA ↘', receipts:'THE RECEIPTS', bring:'Bring the evidence.', receiptsCopy:'Choose one or more Spotify Extended Streaming History JSON files. They\'re analyzed in this browser and never uploaded by this app.',
  numbers:'THE NUMBERS', listeningLore:'Your listening lore.', plot:'THE PLOT TWIST', pressPlay:'Press play on your year.', activity:'ACTIVITY LOG', activityTitle:'When the soundtrack happened.',
  awards:'TROPHIES & DELUSIONS', awardsTitle:'Your evidence-based awards.', friend:'FRIEND LORE', friendTitle:'Compare soundtracks.', life:'PERSONAL DLC', lifeTitle:'Life Wrapped.',
@@ -12,9 +12,9 @@ const themeCopy = {
  },
  y2k: {
  heroEyebrow:'BABE, YOUR 2026 RECEIPTS ✧', heroTitle:'YOUR YEAR<br>WAS <span class="chaos">ICONIC.</span>', heroLede:'Your listening diary, but make it glittery, dramatic and a tiny bit delulu. The numbers are real. The sparkle is extra.',
- heroButton:'SPILL MY STATS ✧', receipts:'THE TEA, WITH RECEIPTS', bring:'Okay bestie, drop the data.', receiptsCopy:'Pick your Spotify Extended Streaming History JSON files. We do the math right here in your browser—no uploading your precious lore.',
- numbers:'THE MAIN CHARACTER STATS', listeningLore:'The soundtrack of your slay.', plot:'THE PLOT TWIST ✦', pressPlay:'Cue the dramatic reveal.', activity:'THE LISTENING DIARY', activityTitle:'When the bop happened.',
- awards:'CROWNS & CHAOTIC WINS', awardsTitle:'Awards you actually earned, babe.', friend:'BESTIE CHECK', friendTitle:'Are your music taste twins?', life:'THE LORE DROP', lifeTitle:'Life Wrapped, diva edition.',
+ heroButton:'SPILL MY STATS ✧', receipts:'THE TEA, WITH RECEIPTS', bring:'Okay bestfren, drop the data.', receiptsCopy:'Pick your Spotify Extended Streaming History JSON files. We do the math right here in your browser—no uploading your lore.',
+ numbers:'THE MAIN CHARACTER STATS', listeningLore:'The soundtrack of your slay.', plot:'THE PLOT TWIST ✦', pressPlay:'Cue the dramatic reveal.', activity:'THE LISTENING DIARY', activityTitle:'When the change happened.',
+ awards:'CROWNS & CHAOTIC WINS', awardsTitle:'Awards you actually earned, babe.', friend:'TWIN CHECK', friendTitle:'Are your music taste twins?', life:'THE LORE DROP', lifeTitle:'Life Wrapped, diva edition.',
  upload:'Bestie, drop your listening lore', uploadCopy:'Choose your Spotify history JSON files. Look for Streaming_History or endsong in your download. Yes, you can select multiple files.',
  choose:'LET ME SEE THE RECEIPTS ✨', topArtists:'Your ride-or-dies.', topTracks:'The bops on repeat.', storyWait:'THE TEA IS LOADING', storyTitle:'Your year had RANGE.', storyCopy:'Upload your history and let the main-character montage begin.',
  footer:'STAY SPARKLY. STAY UNREASONABLE.'
