@@ -68,24 +68,42 @@ function applyTheme(theme) {
  }
 }
 
-const YEAR = 2026, fmt = n => new Intl.NumberFormat().format(n), clean = v => String(v ?? '').trim();
+const YEAR = 2026, WRAPPED_CUTOFF = Date.UTC(YEAR, 10, 15, 23, 59, 59, 999), fmt = n => new Intl.NumberFormat(undefined, {maximumFractionDigits: 1}).format(n), clean = v => String(v ?? '').trim();
 let mine = null, friend = null, slides = [], slideIndex = 0;
 function dateOf(r){const v=r.endTime??r.end_time??r.timestamp??r.played_at??r.ts;if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d}
 function trackOf(r){return clean(r.trackName??r.track_name??r.master_metadata_track_name??r.name)}
-function artistsOf(r){const v=r.artistName??r.artist_name??r.master_metadata_album_artist_name??r.artist;return Array.isArray(v)?v.map(clean).filter(Boolean):(clean(v)?[clean(v)]:[])}
+function primaryArtistOf(r){
+ const v=r.master_metadata_album_artist_name??r.album_artist_name??r.albumArtistName??r.artistName??r.artist_name??r.artist;
+ return clean(Array.isArray(v)?v[0]:v);
+}
+function secondaryArtistsOf(r){
+ const primary=primaryArtistOf(r), raw=r.featured_artists??r.featuredArtists??r.secondary_artist_names??r.secondaryArtists??r.contributing_artists??r.contributingArtists;
+ const explicit=Array.isArray(raw)?raw.map(clean):clean(raw)?[clean(raw)]:[];
+ const artistField=r.artistName??r.artist_name??r.artist;
+ const listed=Array.isArray(artistField)?artistField.map(clean):[];
+ return [...new Set([...explicit,...listed.slice(1)].filter(a=>a&&a!==primary))];
+}
+function artistsOf(r){return [...new Set([primaryArtistOf(r),...secondaryArtistsOf(r)].filter(Boolean))]}
 function msOf(r){const n=Number(r.msPlayed??r.ms_played??r.duration_ms??0);return Number.isFinite(n)&&n>0?n:0}
 function rowsOf(x){if(Array.isArray(x))return x;for(const k of ['items','streamingHistory','streaming_history','endsong'])if(Array.isArray(x?.[k]))return x[k];return []}
 async function loadFiles(files){const rows=[],errors=[];for(const f of [...files])try{const a=rowsOf(JSON.parse(await f.text()));if(a.length)rows.push(...a);else errors.push(f.name+': no recognized history array')}catch{errors.push(f.name+': invalid JSON')}return{rows,errors,count:files.length}}
-function add(map,key,ms){const v=map.get(key)||{plays:0,ms:0};v.plays++;v.ms+=ms;map.set(key,v)}
+function add(map,key,ms,weight=1){const v=map.get(key)||{plays:0,ms:0};v.plays+=weight;v.ms+=ms;map.set(key,v)}
 function rank(map){return [...map.entries()].sort((a,b)=>b[1].plays-a[1].plays||b[1].ms-a[1].ms||a[0].localeCompare(b[0]))}
 function summarize(rows){
  const tm=new Map(),am=new Map(),artists=new Set(),days=new Map(),months=Array(12).fill(0),hours=Array(24).fill(0);let total=0,plays=0,events=0;
- for(const r of rows){const d=dateOf(r);if(!d||d.getUTCFullYear()!==YEAR||!trackOf(r)||!artistsOf(r).length||r.episode_name||r.audiobook_title)continue;
+ for(const r of rows){const d=dateOf(r);if(!d||d.getUTCFullYear()!==YEAR||d.getTime()>WRAPPED_CUTOFF||!trackOf(r)||!primaryArtistOf(r)||r.episode_name||r.audiobook_title)continue;
  const t=trackOf(r),as=artistsOf(r),ms=msOf(r),day=d.toISOString().slice(0,10);
  events++;total+=ms;days.set(day,(days.get(day)||0)+ms);months[d.getUTCMonth()]+=ms;hours[d.getUTCHours()]+=ms;
  // Spotify-style qualifying play: more than 30 seconds recorded for the track.
  // Short skips still contribute to listening duration, but not to play rankings.
- if(ms>30000){plays++;add(tm,t+'\u0000'+as.join(', '),ms);as.forEach(a=>{artists.add(a);add(am,a,ms)})}
+ if(ms>30000){
+  plays++;
+  add(tm,t+'\u0000'+as.join(', '),ms);
+  const primary=primaryArtistOf(r);
+  artists.add(primary);
+  add(am,primary,ms,1);
+  secondaryArtistsOf(r).forEach(a=>{artists.add(a);add(am,a,ms,0.5)});
+ }
  }
  const tracks=rank(tm).map(([key,v])=>{const [name,...rest]=key.split('\u0000');return{name,artist:rest.join('\u0000'),key,...v}});
  const artistRank=rank(am).map(([name,v])=>({name,...v}));
@@ -93,7 +111,7 @@ function summarize(rows){
  return{tracks,artists:artistRank,artistNames:artists,days,months,hours,total,plays,events,activeDays:days.size,maxDay,maxMonth:months.indexOf(Math.max(...months))};
 }
 function renderRank(id,arr,kind){const el=$(id);el.replaceChildren();if(!arr.length){const li=document.createElement('li');li.className='empty-row';li.textContent='No matching 2026 records found.';el.append(li);return}
- arr.slice(0,5).forEach(v=>{const li=document.createElement('li'),wrap=document.createElement('div'),name=document.createElement('span'),sub=document.createElement('span'),count=document.createElement('span');name.className='rank-name';name.textContent=kind==='artist'?v.name:v.name;sub.className='rank-sub';sub.textContent=kind==='artist'?'qualifying plays (>30s)':v.artist;name.append(sub);wrap.append(name);count.className='rank-count';count.textContent=fmt(v.plays)+' plays';li.append(wrap,count);el.append(li)})}
+ arr.slice(0,5).forEach(v=>{const li=document.createElement('li'),wrap=document.createElement('div'),name=document.createElement('span'),sub=document.createElement('span'),count=document.createElement('span');name.className='rank-name';name.textContent=kind==='artist'?v.name:v.name;sub.className='rank-sub';sub.textContent=kind==='artist'?'weighted streams (approx.)':'by '+v.artist;name.append(sub);wrap.append(name);count.className='rank-count';count.textContent=kind==='artist'?fmt(v.plays)+' score':fmt(v.plays)+' plays';li.append(wrap,count);el.append(li)})}
 const hoursText=ms=>(ms/3600000).toFixed(1)+' h';
 function renderHeat(s){const el=$('heatmap');el.replaceChildren();const max=Math.max(1,...s.days.values());for(let d=new Date(Date.UTC(YEAR,0,1));d<=new Date(Date.UTC(YEAR,11,31));d.setUTCDate(d.getUTCDate()+1)){const key=d.toISOString().slice(0,10),ms=s.days.get(key)||0,ratio=ms/max,level=!ms?0:ratio<.15?1:ratio<.4?2:ratio<.7?3:4,cell=document.createElement('span');cell.className='heat-cell';cell.dataset.level=level;cell.title=key+': '+hoursText(ms)+' recorded';cell.setAttribute('aria-label',cell.title);cell.tabIndex=0;el.append(cell)}}
 function renderMonths(s){const el=$('monthlyTimeline');el.replaceChildren();const labels=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],max=Math.max(1,...s.months);labels.forEach((label,i)=>{const row=document.createElement('div'),name=document.createElement('span'),track=document.createElement('div'),fill=document.createElement('div'),value=document.createElement('span');row.className='month-row';name.className='month-name';name.textContent=label;track.className='month-track';track.setAttribute('aria-label',label+' '+hoursText(s.months[i]));fill.className='month-fill';fill.style.width=(s.months[i]/max*100)+'%';track.append(fill);value.className='month-value';value.textContent=hoursText(s.months[i]);row.append(name,track,value);el.append(row)})}
@@ -109,7 +127,7 @@ function renderAwards(s){const el=$('awardsGrid');el.replaceChildren();awards(s)
 function buildSlides(s){const top=s.tracks[0],artist=s.artists[0],month=['January','February','March','April','May','June','July','August','September','October','November','December'][s.maxMonth];slides=[
  {eyebrow:'2026 / YOUR RECEIPTS',title:'Your year had a soundtrack.',body:fmt(s.plays)+' qualifying plays (>30 seconds) from '+fmt(s.events)+' recorded track events in the files you selected. No extrapolated plays.'},
  {eyebrow:'TIME IN THE MIX',number:fmt(Math.floor(s.total/60000)),title:'minutes recorded.',body:hoursText(s.total)+' total recorded listening time, summed from history durations.'},
- {eyebrow:'ARTIST ROLL CALL',number:fmt(s.artistNames.size),title:'unique artist names.',body:artist?'Your most-recorded artist was '+artist.name+' with '+fmt(artist.plays)+' events.':'No qualifying artist plays could be calculated.'},
+ {eyebrow:'ARTIST ROLL CALL',number:fmt(s.artistNames.size),title:'unique artist names.',body:artist?'Your highest-weighted artist was '+artist.name+' with an approximate score of '+fmt(artist.plays)+'.':'No qualifying artist plays could be calculated.'},
  {eyebrow:'THE ONE ON REPEAT',title:top?top.name:'No top track yet',body:top?top.artist+' · '+fmt(top.plays)+' recorded plays. Rankings count track + artist records.':'Upload records with track and artist names to unlock this slide.'},
  {eyebrow:'THE BIG MONTH',title:month,body:hoursText(s.months[s.maxMonth])+' recorded listening time. Monthly totals use UTC timestamps.'},
  {eyebrow:'2026 SO FAR',title:'Receipts over vibes.',body:'This recap comes from the files you selected. Genre, mood and popularity are not guessed from track names.'}
@@ -180,7 +198,7 @@ function downloadCard(){
   $('fileStatus').textContent='Saved card '+(slideIndex+1)+' of '+slides.length+' as a '+theme+' PNG. Your history stays in this browser.';
  },'image/png');
 }
-function renderMine(rows,count){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Processed '+count+' JSON file(s). Found '+fmt(s.events)+' recorded track events and '+fmt(s.plays)+' qualifying plays (>30 seconds) in 2026. Short skips count toward duration, not play rankings. Calculations stayed in this browser.';renderCompare()}
+function renderMine(rows,count){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Processed '+count+' JSON file(s). Found '+fmt(s.events)+' track records and '+fmt(s.plays)+' qualifying plays (>30 seconds) in the Wrapped-style window (Jan 1–Nov 15, 2026). Artist scores use 1.0 for primary artists and 0.5 for explicitly listed secondary artists; this is an approximation, not Spotify’s undisclosed weighting. Calculations stayed in this browser.';renderCompare()}
 function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
 function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
 $('historyFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('fileStatus').textContent='Reading selected files locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){$('fileStatus').textContent='No history rows could be read. Choose Spotify streaming-history JSON files. '+r.errors.join(' · ');return}renderMine(r.rows,r.count);if(r.errors.length)$('fileStatus').textContent+=' Skipped: '+r.errors.join(' · ')});
