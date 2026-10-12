@@ -29,13 +29,14 @@ The selected files are processed locally in your browser. This app does not uplo
 
 ## Data rules and caveats
 
-- The year filter uses the UTC year from each record's timestamp.
+- The Wrapped-style window uses UTC timestamps from Jan 1 through Nov 15, 2026. Spotify says Wrapped runs from Jan 1 to mid-November; Nov 15 is an explicit approximation because Spotify does not publish a fixed cutoff date in its methodology article.
 - Listening time is the sum of recorded `msPlayed` / `ms_played` values; it is not an estimate based on full track duration.
-- Rankings count records with a track and artist name and are not guaranteed to match Spotify's proprietary Wrapped methodology. Short and partial plays may be included.
+- Top-song rankings count one record per play when `ms_played > 30000`, matching Spotify's published “more than 30 seconds” definition as closely as this export allows. Top-artist rankings approximate Spotify's disclosed weighted method with 1.0 point for the primary artist and 0.5 for explicitly listed secondary/featured artists. Spotify does not publish exact weights; common exports may not identify featured artists separately, so artist rankings are estimates, not an exact copy of Spotify Wrapped.
 - Heatmap and monthly totals are based on recorded duration by UTC date/month.
 - Awards use explicit thresholds or direct comparisons visible in their evidence text. They are playful labels, not claims about a person's mood or psychology.
 - Friend overlap compares normalized artist names and track + artist pairs. Different spellings/metadata can reduce the apparent overlap.
 - Streaming history does not reliably contain genre labels or Spotify popularity scores. Genre rankings and “most obscure track” are not fabricated.
+- Spotify's documented Wrapped rules also exclude some non-music/background content and exclude Private Mode or Taste Profile-excluded streams from taste-based stories; Extended Streaming History may not expose enough information to reproduce those filters. The app does not claim to match these private/internal rules.
 - No real export has been used to verify the displayed results yet; validate with an actual export before relying on individual calculations.
 
 ## Tech
