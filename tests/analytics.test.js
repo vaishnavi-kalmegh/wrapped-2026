@@ -547,20 +547,93 @@ test('Phase 6 Listening Lore uses explicit evidence thresholds and story exclude
   assert.ok(stories.some(x=>x.type==='tracks'));
 });
 
-test('Phase 6 artwork matches require exact track and artist metadata; failures safely fall back', () => {
+test('Artwork matching normalizes punctuation, Unicode accents and case but checks both track and artist', () => {
   const results=[
-    {trackName:'Other Song',artistName:'Artist',artworkUrl100:'https://example.test/wrong.jpg'},
+    {trackName:'Joga',artistName:'Björk',artworkUrl100:'https://example.test/cover-1.jpg'},
     {trackName:'Song ✨',artistName:'Different Artist',artworkUrl100:'https://example.test/wrong-artist.jpg'},
-    {trackName:'Song ✨',artistName:'Artist',artworkUrl600:'https://example.test/right.jpg'}
+    {trackName:'Song ✨',artistName:'Artist',artworkUrl600:'https://example.test/right.jpg'},
+    {trackName:'Song Remix',artistName:'Artist',artworkUrl600:'https://example.test/remix.jpg'}
   ];
-  assert.equal(E.findTrackArtwork(results,'Song ✨','Artist'),'https://example.test/right.jpg');
+  assert.equal(E.findTrackArtwork(results,'Jóga','BJÖRK'),'https://example.test/cover-1.jpg');
+  assert.equal(E.findTrackArtwork(results,'Song — ✨','Artist'),'https://example.test/right.jpg');
   assert.equal(E.findTrackArtwork(results,'Song ✨','Missing Artist'),null);
+  assert.equal(E.findTrackArtwork(results,'Song','Artist'),null,'a remix must not be accepted as the original track');
   assert.equal(E.findTrackArtwork([], 'Unknown','Unknown'),null);
+});
+test('Artwork matching tolerates featured-artist and release-edition formatting without dropping remix identity', () => {
+  const results=[
+    {trackName:'Midnight (feat. Guest Artist)',artistName:'Lead Artist feat. Guest Artist',artworkUrl600:'https://example.test/feature.jpg'},
+    {trackName:'Pulse - Nova Remix',artistName:'DJ Nova',artworkUrl600:'https://example.test/remix.jpg'},
+    {trackName:'Pulse',artistName:'DJ Nova',artworkUrl600:'https://example.test/original.jpg'},
+    {trackName:'Clean Song (Clean)',artistName:'Singer',artworkUrl100:'https://example.test/clean.jpg'}
+  ];
+  assert.equal(E.findTrackArtwork(results,'Midnight','Lead Artist'),'https://example.test/feature.jpg');
+  assert.equal(E.findTrackArtwork(results,'Pulse — Nova Remix','DJ Nova'),'https://example.test/remix.jpg');
+  assert.equal(E.findTrackArtwork(results,'Pulse Remix','DJ Nova'),null);
+  assert.equal(E.findTrackArtwork(results,'Clean Song [Explicit]','Singer'),'https://example.test/clean.jpg');
+});
+test('Artwork matching rejects ambiguous release when imported album is known and prefers exact release metadata', () => {
+  const results=[
+    {trackName:'Stay',artistName:'Singer',collectionName:'Single',artworkUrl600:'https://example.test/single.jpg'},
+    {trackName:'Stay',artistName:'Singer',collectionName:'Deluxe Album',artworkUrl600:'https://example.test/deluxe.jpg'}
+  ];
+  assert.equal(E.findTrackArtwork(results,'Stay','Singer','Deluxe Album'),'https://example.test/deluxe.jpg');
+  assert.equal(E.findTrackArtwork(results,'Stay','Singer','Unrelated Album'),null);
+  assert.equal(E.findTrackArtwork(results,'Stay','Singer'), 'https://example.test/single.jpg');
+});
+test('Artwork URLs must be valid HTTPS URLs and require actual artwork metadata', () => {
+  assert.equal(E.validArtworkUrl('https://example.test/cover.jpg'),'https://example.test/cover.jpg');
+  assert.equal(E.validArtworkUrl('http://example.test/cover.jpg'),null);
+  assert.equal(E.validArtworkUrl('javascript:alert(1)'),null);
+  assert.equal(E.validArtworkUrl('not a URL'),null);
+  assert.equal(E.findTrackArtwork([{trackName:'Song',artistName:'Artist'}],'Song','Artist'),null);
+  assert.equal(E.findTrackArtwork([{trackName:'Song',artistName:'Artist',artworkUrl100:'http://example.test/cover.jpg'}],'Song','Artist'),null);
+});
+test('iTunes lookup uses title and artist first, then a broader query while still validating metadata', async () => {
+  const calls=[];
+  const fetcher=async url=>{
+    calls.push(new URL(url));
+    if(calls.length===1)return {ok:true,json:async()=>({resultCount:0,results:[]})};
+    return {ok:true,json:async()=>({results:[
+      {trackName:'Unrelated Song',artistName:'Artist',artworkUrl600:'https://example.test/wrong.jpg'},
+      {trackName:'Target Song',artistName:'Other Artist',artworkUrl600:'https://example.test/wrong-artist.jpg'},
+      {trackName:'Target Song',artistName:'Artist',artworkUrl600:'https://example.test/target.jpg'}
+    ]})};
+  };
+  assert.equal(await E.lookupTrackArtwork('Target Song','Artist',null,fetcher),'https://example.test/target.jpg');
+  assert.equal(calls.length,2);
+  assert.equal(calls[0].searchParams.get('entity'),'song');
+  assert.match(calls[0].searchParams.get('term'),/Target Song.*Artist/);
+  assert.match(calls[1].searchParams.get('term'),/Target Song.*Artist/);
+});
+test('iTunes exact match avoids the fallback query and does not depend on a Wikipedia page', async () => {
+  let calls=0;
+  const fetcher=async url=>{
+    calls++;
+    assert.match(url,/itunes\\.apple\\.com\\/search/);
+    return {ok:true,json:async()=>({results:[{trackName:'No Wikipedia Page Needed',artistName:'Independent Artist',artworkUrl600:'https://example.test/album.jpg'}]})};
+  };
+  assert.equal(await E.lookupTrackArtwork('No Wikipedia Page Needed','Independent Artist',null,fetcher),'https://example.test/album.jpg');
+  assert.equal(calls,1);
+});
+test('iTunes empty results and missing artwork safely return no match after both searches', async () => {
+  let calls=0;
+  const fetcher=async()=>{calls++;return {ok:true,json:async()=>({results:calls===1?[]:[{trackName:'Unknown Song',artistName:'Unknown Artist'}]})};};
+  assert.equal(await E.lookupTrackArtwork('Unknown Song','Unknown Artist',null,fetcher),null);
+  assert.equal(calls,2);
+});
+test('iTunes network errors, malformed responses and rate limits reject cleanly for fallback UI', async () => {
+  await assert.rejects(E.lookupTrackArtwork('Song','Artist',null,async()=>{throw new TypeError('network offline');}),/network offline/);
+  await assert.rejects(E.lookupTrackArtwork('Song','Artist',null,async()=>({ok:true,json:async()=>({unexpected:[]})})),/Malformed iTunes response/);
+  let calls=0;
+  await assert.rejects(E.lookupTrackArtwork('Song','Artist',null,async()=>{calls++;return {ok:false,status:429};}),/429/);
+  assert.equal(calls,1,'do not retry a rate-limited request');
+});
+test('Artist Wikipedia title matching remains separate from track artwork matching', () => {
   assert.equal(E.isExactArtistPage('Björk','Björk'),true);
   assert.equal(E.isExactArtistPage('Björk (album)','Björk'),false);
   assert.equal(E.isExactArtistPage('Other Artist','Björk'),false);
 });
-
 test('Phase 6 story-first navigation, portrait export, keyboard, mobile and reduced-motion contracts exist', () => {
   const root=path.join(__dirname,'..');
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
