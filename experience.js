@@ -101,7 +101,7 @@
   function rankingCard(item,rank,type){
     const artist=type==='artist',name=artist?item.name:item.name,sub=artist?number(item.plays)+' estimated play points':item.artist+' · '+number(item.plays)+' qualifying plays';
     const img=artist?item.imageUrl:item.artworkUrl,alt=artist?'Profile image for '+name:'Album artwork for '+name;
-    const image=img?'<img data-artwork-kind="'+(artist?'artist':'track')+'" loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
+    const image=img?'<img data-artwork-kind="'+(artist?'artist':'track')+'" data-artwork-key="'+escapeHTML(artist?item.name:item.name+'|'+item.artist)+'" loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
     return '<article class="music-card '+(rank<=5?'featured':'')+' '+type+'-card"><div class="music-art">'+image+'<span class="music-rank">'+String(rank).padStart(2,'0')+'</span></div><div class="music-meta"><h3 title="'+escapeHTML(name)+'">'+escapeHTML(name)+'</h3><p>'+escapeHTML(artist?sub:item.artist)+'</p><span class="music-metric">'+escapeHTML(artist?number(item.plays)+' estimated play points':number(item.plays)+' qualifying plays')+'</span></div></article>';
   }
   function visibleRankings(items,limit){const ranked=(items||[]).filter(x=>x&&x.plays>0);return ranked.slice(0,Math.min(50,Math.max(10,Number(limit)||10)));}
@@ -197,9 +197,17 @@
   function attachArtworkFallbacks(container){
     if(!container)return;
     container.querySelectorAll('img[data-artwork-kind]').forEach(img=>img.addEventListener('error',()=>{
+      const kind=img.dataset.artworkKind,identity=img.dataset.artworkKey;
+      if(identity){
+        const cacheKey=(kind==='artist'?'artist:':'track:')+identity;
+        artworkCache.set(cacheKey,{url:null,expiresAt:Date.now()+ARTWORK_MISS_TTL});
+        const list=kind==='artist'?summary?.artists:summary?.tracks;
+        const item=(list||[]).find(x=>key(kind==='artist'?x.name:x.name+'|'+x.artist)===key(identity));
+        if(item)delete item[kind==='artist'?'imageUrl':'artworkUrl'];
+      }
       const inCard=Boolean(img.closest('.music-art')),fallback=root.document.createElement(inCard?'div':'span');
-      fallback.className=inCard?'art-fallback '+(img.dataset.artworkKind==='artist'?'artist-fallback':'track-fallback'):'story-item-placeholder';
-      fallback.setAttribute('aria-hidden','true');fallback.textContent=img.dataset.artworkKind==='artist'?'✳':'♫';img.replaceWith(fallback);
+      fallback.className=inCard?'art-fallback '+(kind==='artist'?'artist-fallback':'track-fallback'):'story-item-placeholder';
+      fallback.setAttribute('aria-hidden','true');fallback.textContent=kind==='artist'?'✳':'♫';img.replaceWith(fallback);
     },{once:true}));
   }
   function resolveArtwork(items,type){
@@ -312,7 +320,7 @@
     if(!slide)return;
     const items=slide.items||[];
     const theme=root.document.documentElement.dataset.theme,storyLabels=theme==='y2k'?{lore:'THE LORE DROP ✨',artists:'YOUR RIDE-OR-DIES',tracks:'THE BOPS ON REPEAT',duration:'MAIN-CHARACTER STATS',month:'YOUR MONTHLY ERA',hour:'THE CLOCKED-IN HOURS',closing:'THE FINAL TEA ✧',empty:'NO RECEIPTS, NO CLAIMS'}:theme==='futuristic'?{lore:'ARCHIVE SIGNAL // LORE',artists:'ARTIST NODES',tracks:'TRACK FREQUENCY',duration:'RECORDED DURATION',month:'MONTHLY DISTRIBUTION',hour:'HOURLY SIGNAL',closing:'SEQUENCE COMPLETE',empty:'NO DATA // NO CLAIM'}:{lore:'LISTENING LORE',artists:'TOP ARTISTS',tracks:'TOP SONGS',duration:'LISTENING NUMBERS',month:'MONTHLY SIGNAL',hour:'24-HOUR MIX',closing:'THE FINAL RECEIPT',empty:'NO MATCHING RECORDS'};
-    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img data-artwork-kind="'+(slide.type==='tracks'?'track':'artist')+'" class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
+    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img data-artwork-kind="'+(slide.type==='tracks'?'track':'artist')+'" data-artwork-key="'+escapeHTML(slide.type==='tracks'?x.name+'|'+x.artist:x.name)+'" class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
     $('storyStep').textContent='STORY '+(slideIndex+1)+' / '+slideList.length;
     $('storyProgress').innerHTML=slideList.map((x,i)=>'<span class="'+(i<=slideIndex?'active':'')+'"></span>').join('');
     $('storyProgress').setAttribute('aria-valuenow',String(slideIndex+1));$('storyProgress').setAttribute('aria-valuemax',String(slideList.length));
