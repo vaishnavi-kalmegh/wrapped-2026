@@ -97,8 +97,10 @@
     }
     if (kind === 'last12Months' || kind === 'last-12-months') {
       const end = now == null ? Date.now() : now, d = new Date(end);
-      const startDate = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 12, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(), d.getUTCMilliseconds()));
-      return { valid: true, kind: 'last12Months', start: startDate.getTime(), end, label: 'Last 12 months' };
+      const targetYear = d.getUTCFullYear() - 1, targetMonth = d.getUTCMonth();
+      const day = Math.min(d.getUTCDate(), new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate());
+      const startDate = Date.UTC(targetYear, targetMonth, day, d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(), d.getUTCMilliseconds());
+      return { valid: true, kind: 'last12Months', start: startDate, end, label: 'Last 12 months' };
     }
     if (kind === 'custom') {
       const start = parseDateBoundary(opts.start, false), end = parseDateBoundary(opts.end, true);
@@ -112,6 +114,8 @@
     if (value == null || value === '') return null;
     if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
       const parts = value.split('-').map(Number);
+      const check = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+      if (check.getUTCFullYear() !== parts[0] || check.getUTCMonth() !== parts[1] - 1 || check.getUTCDate() !== parts[2]) return null;
       return endOfDay ? Date.UTC(parts[0], parts[1] - 1, parts[2] + 1) - 1 : Date.UTC(parts[0], parts[1] - 1, parts[2]);
     }
     const ms = parseTimestamp(value);
@@ -141,7 +145,7 @@
         months[d.getUTCMonth()] += r.durationMs;
         hours[d.getUTCHours()] += r.durationMs;
       }
-      if (r.timestamp == null || !r.track || !r.primaryArtist) continue;
+      if ((requestedRange && r.timestamp == null) || !r.track || !r.primaryArtist) continue;
       events++;
       if (r.durationMs > 30000) {
         plays++; rankedEvents++;
