@@ -131,3 +131,17 @@ test('missing album metadata is never inferred and missing names remain safely c
   assert.equal(s.total,105000);
   assert.equal(s.tracks.length,1);
 });
+
+
+test('detailed dashboard option retains short-only groups for listening-time sorting', () => {
+  const rows=[
+    row('2026-01-01T00:00:00Z','Short track','Artist',25000,{master_metadata_album_album_name:'Short album'}),
+    row('2026-01-02T00:00:00Z','Qualified track','Artist',45000,{master_metadata_album_album_name:'Long album'})
+  ];
+  const defaultSummary=A.summarize(rows),detailed=A.summarize(rows,{includeUnqualifiedGroups:true});
+  assert.equal(defaultSummary.tracks.some(t=>t.name==='Short track'),false);
+  assert.equal(detailed.tracks.find(t=>t.name==='Short track').plays,0);
+  assert.equal(detailed.tracks.find(t=>t.name==='Short track').ms,25000);
+  assert.equal(detailed.albums.find(a=>a.album==='Short album').plays,0);
+  assert.equal(detailed.artists.find(a=>a.name==='Artist').plays,2);
+});
