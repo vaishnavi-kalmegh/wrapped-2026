@@ -178,6 +178,7 @@ test('equal-period comparisons handle zero baselines without Infinity',()=>{
   const rows=[row('2026-01-01T00:00:00Z','A','Artist',45000)],x=A.comparePeriods(rows,custom('2025-01-01','2025-12-31'),custom('2026-01-01','2026-12-31'));
   assert.equal(x.valid,true);assert.equal(x.metrics.find(m=>m.key==='qualifyingPlays').changePercent,null);
   const same=A.comparePeriods(rows,custom('2026-01-01','2026-12-31'),custom('2026-01-01','2026-12-31'));assert.equal(same.metrics.find(m=>m.key==='qualifyingPlays').changePercent,0);
+  const empty=A.comparePeriods([],custom('2024-01-01','2024-12-31'),custom('2025-01-01','2025-12-31'));assert.ok(empty.metrics.every(m=>m.changePercent===null));
 });
 test('insight calculations honor date ranges and exclude marked non-music',()=>{
   const rows=[row('2025-12-31T23:59:59Z','Old','Old Artist',50000),row('2026-01-01T00:00:00Z','Podcast','Narrator',50000,{episode_name:'Podcast'}),row('2026-01-02T00:00:00Z','In range','Artist',45000)],range=custom('2026-01-01','2026-12-31');
