@@ -148,6 +148,7 @@
     return data.thumbnail.source;
   }
   function renderNumbers(){
+    if(!summary||!summary.valid){$('numberTime').textContent='—';$('numberPlays').textContent='—';$('numberArtists').textContent='—';$('numberTracks').textContent='—';$('numberRange').textContent='Range needs attention';return;}
     $('numberTime').textContent=hours(summary.total);
     $('numberPlays').textContent=number(summary.plays);
     $('numberArtists').textContent=number(summary.artistNames.size);
