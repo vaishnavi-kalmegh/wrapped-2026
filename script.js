@@ -36,6 +36,12 @@ function applyTheme(theme) {
  set('.hero-copy .eyebrow',t.heroEyebrow); set('.hero-copy h1',t.heroTitle);
  set('.hero-copy .lede',t.heroLede); set('.hero-copy .button-bright',t.heroButton);
  const receiptHead=document.querySelector('.section-head'); if(receiptHead){const e=receiptHead.querySelector('.eyebrow'),h=receiptHead.querySelector('h2'),p=receiptHead.querySelector(':scope > p');if(e)e.textContent=t.receipts;if(h)h.textContent=t.bring;if(p)p.textContent=t.receiptsCopy}
+ const lifetimeHead=document.querySelector('.lifetime-section-head');
+ if(lifetimeHead){const e=lifetimeHead.querySelector('.eyebrow'),h=lifetimeHead.querySelector('h2'),p=lifetimeHead.querySelector(':scope > p');
+  if(theme==='y2k'){if(e)e.textContent='THE WHOLE BOP ARCHIVE ✧';if(h)h.textContent='Your entire era.';if(p)p.textContent='Every year, every loop, all the receipts. Pick a date range and let the lore unfold.'}
+  else if(theme==='futuristic'){if(e)e.textContent='ARCHIVE ANALYTICS // ALL CYCLES';if(h)h.textContent='Lifetime listening profile.';if(p)p.textContent='Aggregate recorded listening across imported history. Select a temporal window to recalculate.'}
+  else{if(e)e.textContent='THE FULL ARCHIVE';if(h)h.textContent='Your lifetime listening.';if(p)p.textContent='This overview uses the same analytics engine across all imported years. The original Wrapped section below stays locked to its 2026 window.'}
+ }
  const heads=document.querySelectorAll('.section-head');
  const pairs=[[1,t.numbers,t.listeningLore],[2,t.plot,t.pressPlay],[3,t.activity,t.activityTitle],[4,t.awards,t.awardsTitle],[5,t.friend,t.friendTitle],[6,t.life,t.lifeTitle]];
  pairs.forEach(([i,e,h])=>{if(heads[i]){const a=heads[i].querySelector('.eyebrow');const b=heads[i].querySelector('h2');if(a)a.textContent=e;if(b)b.textContent=h}});
@@ -55,6 +61,8 @@ function applyTheme(theme) {
    ? ['LISTENING DURATION','UNIQUE ARTIST NODES','QUALIFYING PLAYS (>30S)','PRIMARY TRACK']
    : ['TIME SPENT LISTENING','UNIQUE ARTISTS','QUALIFYING PLAYS (>30S)','YOUR #1 TRACK'];
  document.querySelectorAll('.stat-label').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]});
+  const lifetimeLabels=theme==='y2k'?['TIME IN YOUR ENTIRE FEELS','ARTIST ORBIT','BOPS OVER 30 SECONDS','ALBUM LORE']:theme==='futuristic'?['RECORDED DURATION','ARTIST NODES','QUALIFYING EVENTS','ALBUM GROUPS']:['RECORDED LISTENING','QUALIFYING PLAYS','ARTIST NAMES','ALBUM GROUPS'];
+  document.querySelectorAll('.lifetime-metrics .stat-label').forEach((el,i)=>{if(lifetimeLabels[i])el.textContent=lifetimeLabels[i]});
  const storyEyebrow=document.querySelector('.story-topline .eyebrow');
  if(storyEyebrow)storyEyebrow.textContent=theme==='y2k'?'YOUR YEAR, THE GLITTER CUT ✧':theme==='futuristic'?'RECAP SEQUENCE // ACTIVE':'YOUR RECAP / STORY MODE';
  const btns={storyPrev:theme==='y2k'?'← BACK, BESTIE':theme==='futuristic'?'← PREVIOUS FRAME':'← PREVIOUS',downloadCard:theme==='y2k'?'↓ SAVE THE SLAY ✨':theme==='futuristic'?'↓ EXPORT FRAME':'↓ SAVE CARD',storyNext:theme==='y2k'?'NEXT PLOT TWIST ✧':theme==='futuristic'?'NEXT FRAME ↗':'NEXT SLIDE ↗',resetData:theme==='y2k'?'RESET THE LORE ✦':theme==='futuristic'?'CLEAR SESSION DATA':'RESET MY DATA',buildLife:theme==='y2k'?'MAKE MY LORE ✨':theme==='futuristic'?'COMPILE EVENT LOG ↗':'MAKE MY LIFE RECAP ↗'};
