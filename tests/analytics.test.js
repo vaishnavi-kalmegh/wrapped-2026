@@ -157,3 +157,29 @@ test('all-time rankings can include undated track records but date ranges exclud
   assert.equal(year.tracks[0].name,'Dated track');
   assert.equal(year.total,50000);
 });
+
+test('Phase 3 milestone thresholds are deterministic and expose the next threshold',()=>{
+  const s=A.summarize([row('2026-01-01T00:00:00Z','One','A',60001)]),m=A.milestoneBadges(s);
+  assert.equal(m.find(x=>x.key==='plays').value,1);assert.deepEqual(m.find(x=>x.key==='plays').earned,[]);assert.equal(m.find(x=>x.key==='plays').next,10);
+});
+test('listening streaks count distinct UTC dates and split across missing days',()=>{
+  const rows=[row('2026-01-01T01:00:00Z','A','X',40000),row('2026-01-01T22:00:00Z','B','X',40000),row('2026-01-02T00:00:00Z','C','X',40000),row('2026-01-04T00:00:00Z','D','X',40000)],s=A.listeningStreaks(rows);
+  assert.equal(s.activeDays,3);assert.deepEqual(s.longest,{days:2,start:'2026-01-01',end:'2026-01-02'});assert.equal(s.current.days,1);
+});
+test('first observed dates use earliest valid records and never call them lifetime discoveries',()=>{
+  const rows=[row('2026-02-01T00:00:00Z','Later','A',40000),row('2026-01-01T00:00:00Z','Earlier','A',40000),row('invalid','Undated','B',40000)],x=A.firstObserved(rows);
+  assert.equal(x.tracks[0].name,'Earlier');assert.equal(x.tracks.length,2);assert.equal(x.artists.find(a=>a.name==='A').date,'2026-01-01');
+});
+test('artist concentration counts primary-artist duration once and handles empty data',()=>{
+  const rows=[row('2026-01-01T00:00:00Z','A','Lead',60000,{featured_artists:['Guest']}),row('2026-01-02T00:00:00Z','B','Other',40000)],c=A.artistConcentration(rows);
+  assert.equal(c.totalPrimaryArtistMs,100000);assert.equal(c.topArtistShare,0.6);assert.equal(c.topFiveShare,1);assert.equal(A.artistConcentration([]).topArtistShare,0);
+});
+test('equal-period comparisons handle zero baselines without Infinity',()=>{
+  const rows=[row('2026-01-01T00:00:00Z','A','Artist',45000)],x=A.comparePeriods(rows,custom('2025-01-01','2025-12-31'),custom('2026-01-01','2026-12-31'));
+  assert.equal(x.valid,true);assert.equal(x.metrics.find(m=>m.key==='qualifyingPlays').changePercent,null);
+  const same=A.comparePeriods(rows,custom('2026-01-01','2026-12-31'),custom('2026-01-01','2026-12-31'));assert.equal(same.metrics.find(m=>m.key==='qualifyingPlays').changePercent,0);
+});
+test('insight calculations honor date ranges and exclude marked non-music',()=>{
+  const rows=[row('2025-12-31T23:59:59Z','Old','Old Artist',50000),row('2026-01-01T00:00:00Z','Podcast','Narrator',50000,{episode_name:'Podcast'}),row('2026-01-02T00:00:00Z','In range','Artist',45000)],range=custom('2026-01-01','2026-12-31');
+  assert.deepEqual(A.listeningStreaks(rows,{range}).dates,['2026-01-02']);assert.equal(A.artistConcentration(rows,{range}).artists.length,1);assert.equal(A.firstObserved(rows,{range}).tracks.length,1);
+});
