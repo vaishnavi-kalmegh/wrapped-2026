@@ -145,7 +145,7 @@ These commands are also run by the existing GitHub Actions workflow on relevant 
 ### PNG card export and privacy
 
 - PNG cards are rendered with the browser's canvas at 1080 × 1920 pixels. Export contains the currently selected story only—not raw event rows, account identifiers, or a full history file.
-- The current theme controls the card's colors and decorative styling. No external artwork, remote fonts, tracking, or third-party rendering service is fetched for card generation.
+- The current theme controls the card's colors and decorative styling. No external artwork or third-party rendering service is used for card generation. The existing stylesheet imports Google Fonts for page typography; those font requests are separate from listening-data processing and may require a network connection.
 - Long words and names are split to fit the card text area; Unicode names are preserved in the story content. If canvas rendering or PNG creation fails, the app shows an error message rather than claiming a file was saved.
 - Export is browser-local. No user data is sent to a server. The app does not persist imported history across refreshes.
 
