@@ -590,7 +590,7 @@ test('Phase 6 default story range preserves the Jan 1–Nov 15 2026 UTC window',
   assert.equal(range.valid,true);
   assert.equal(range.start,Date.UTC(2026,0,1));
   assert.equal(range.end,Date.UTC(2026,10,16)-1);
-  assert.match(range.label,/Custom range/);
+  assert.match(range.label,/2026 Wrapped.*Nov 15 UTC/);
 });
 
 test('Phase 6 invalid custom range has a safe story empty state', () => {
