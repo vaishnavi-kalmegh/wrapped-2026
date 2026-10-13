@@ -120,6 +120,63 @@
     if(!next.range.valid){summary=null;['trackSummary','artistSummary','albumSummary','historySummary','patternsSummary'].forEach(id=>$(id).textContent=next.range.error);renderTracks();renderArtists();renderAlbums();renderHistory();renderPatterns();return;}
     summary=next.result;renderTracks();renderArtists();renderAlbums();renderHistory();renderPatterns();
   }
+
+  function csvCell(value) {
+    const text = String(value == null ? '' : value);
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+  function exportReport() {
+    const status = $('reportExportStatus');
+    const range = getRange();
+    if (!sourceRows.length) { status.textContent = 'Import history before exporting a report.'; return; }
+    if (!range.valid) { status.textContent = range.error; return; }
+    const s = WrappedAnalytics.summarize(sourceRows, { range, includeUnqualifiedGroups: true });
+    const streak = WrappedAnalytics.listeningStreaks(sourceRows, { range });
+    const concentration = WrappedAnalytics.artistConcentration(sourceRows, { range });
+    const reportRows = [
+      ['WRAPPED.exe listening report'],
+      ['Selected date range', range.label],
+      [],
+      ['Summary metric', 'Value'],
+      ['Recorded listening duration (milliseconds)', s.total],
+      ['Qualifying plays (strictly over 30000 ms)', s.plays],
+      ['Track groups with qualifying plays', s.tracks.filter(x => x.plays > 0).length],
+      ['Artist groups with qualifying plays', s.artists.filter(x => x.plays > 0).length],
+      ['Active UTC dates', streak.activeDays],
+      ['Longest consecutive-day streak', streak.longest.days],
+      ['Latest-date consecutive-day streak', streak.current.days],
+      ['Top primary-artist duration share (%)', (concentration.topArtistShare * 100).toFixed(2)],
+      ['Top five primary-artist duration share (%)', (concentration.topFiveShare * 100).toFixed(2)],
+      [],
+      ['Top tracks by qualifying plays'],
+      ['Track', 'Primary artist', 'Qualifying plays', 'Recorded duration (milliseconds)'],
+      ...s.tracks.filter(x => x.plays > 0).slice(0, 10).map(x => [x.name, x.artist, x.plays, x.ms]),
+      [],
+      ['Top artists by estimated play points'],
+      ['Artist', 'Estimated play points', 'Artist-attributed duration (milliseconds; may overlap)'],
+      ...s.artists.filter(x => x.plays > 0).slice(0, 10).map(x => [x.name, x.plays, x.ms]),
+      [],
+      ['Definitions and caveats'],
+      ['Qualifying play', 'One event with recorded duration strictly greater than 30000 milliseconds.'],
+      ['Recorded listening duration', 'Positive recorded duration values are summed; short events contribute to duration.'],
+      ['Artist play points', 'Primary artist = 1.0; explicitly listed secondary artists = 0.5 per qualifying event; estimates only.'],
+      ['Collaborative duration', 'Artist-attributed duration overlaps for collaborations and must not be added across artists.'],
+      ['Date policy', 'Calendar grouping and custom inclusive date ranges use UTC; undated events are excluded from bounded ranges.'],
+      ['Missing data', 'Unavailable names and metadata are not inferred. This report contains summaries, not raw streaming-history rows.'],
+      ['Privacy', 'Generated locally in this browser; no report data is uploaded.']
+    ];
+    const csv = reportRows.map(row => row.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeRange = String(range.kind || 'selected-range').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+    link.href = url;
+    link.download = 'wrapped-exe-listening-report-' + safeRange + '.csv';
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status.textContent = 'CSV report exported for ' + range.label + '. Only summary metrics and top rankings were included; raw history was not exported.';
+  }
+
   function resetPages(){visible={tracks:PAGE_SIZE,artists:PAGE_SIZE,albums:PAGE_SIZE,history:PAGE_SIZE};}
   window.addEventListener('wrapped-history-updated',e=>{sourceRows=Array.isArray(e.detail&&e.detail.rows)?e.detail.rows.slice():[];resetPages();render();});
   window.addEventListener('wrapped-range-changed',()=>{resetPages();render();});
@@ -128,5 +185,7 @@
   ['trackSort','artistSort','albumSort'].forEach(id=>$(id).addEventListener('change',()=>{const kind=id.replace('Sort','').toLowerCase();visible[kind]=PAGE_SIZE;({tracks:renderTracks,artists:renderArtists,albums:renderAlbums})[kind]();}));
   [['tracksMore','tracks',renderTracks],['artistsMore','artists',renderArtists],['albumsMore','albums',renderAlbums],['historyMore','history',renderHistory]].forEach(([id,kind,fn])=>$(id).addEventListener('click',()=>{visible[kind]+=PAGE_SIZE;fn();}));
   document.querySelector('.analytics-nav').addEventListener('click',e=>{const a=e.target.closest('a');if(a&&a.hash){const target=$(a.hash.slice(1));if(target){target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}}});
+  const exportButton = $('exportReport');
+  if (exportButton) exportButton.addEventListener('click', exportReport);
   render();
 })();
