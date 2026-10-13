@@ -71,7 +71,7 @@ function applyTheme(theme) {
  const lifeTitle=document.querySelector('.life-intro h3');if(lifeTitle)lifeTitle.textContent=theme==='y2k'?'Dump the lore, diva.':theme==='futuristic'?'Enter user-defined events.':'Dump the lore.';
  const storyButton=$('storyNext');if(storyButton&&storyButton.disabled&&!slides.length)storyButton.textContent=theme==='y2k'?'NEXT PLOT TWIST ✧':theme==='futuristic'?'NEXT FRAME ↗':'NEXT SLIDE ↗';
  if(slides.length) { 
-   if(mine) buildSlides(mine);
+   if(mine) buildSlides();
    else renderSlide();
  }
 }
@@ -141,81 +141,122 @@ function awards(s){const out=[],top=s.tracks[0],total=s.plays;if(!top)return[{ic
  if(s.activeDays>=20)out.push({icon:'📆',title:'Regular on the Rotation',detail:'You have track activity on at least 20 dates.',proof:fmt(s.activeDays)+' active UTC days in 2026'});
  return out.length?out:[{icon:'🪩',title:'The Open Tab',detail:'Your listening pattern is still taking shape.',proof:fmt(total)+' recorded track events so far'}]}
 function renderAwards(s){const el=$('awardsGrid');el.replaceChildren();awards(s).forEach(a=>{const card=document.createElement('article'),icon=document.createElement('span'),h=document.createElement('h3'),p=document.createElement('p'),proof=document.createElement('span');card.className='panel award-card';icon.className='award-icon';icon.textContent=a.icon;h.textContent=a.title;p.textContent=a.detail;proof.className='award-proof';proof.textContent=a.proof;card.append(icon,h,p,proof);el.append(card)})}
-function buildSlides(s){const top=s.tracks[0],artist=s.artists[0],month=['January','February','March','April','May','June','July','August','September','October','November','December'][s.maxMonth];slides=[
- {eyebrow:'2026 / YOUR RECEIPTS',title:'Your year had a soundtrack.',body:fmt(s.plays)+' qualifying plays (>30 seconds) from '+fmt(s.events)+' recorded track events in the files you selected. No extrapolated plays.'},
- {eyebrow:'TIME IN THE MIX',number:fmt(Math.floor(s.total/60000)),title:'minutes recorded.',body:hoursText(s.total)+' total recorded listening time, summed from history durations.'},
- {eyebrow:'ARTIST ROLL CALL',number:fmt(s.artistNames.size),title:'unique artist names.',body:artist?'Your highest-weighted artist was '+artist.name+' with an approximate score of '+fmt(artist.plays)+'.':'No qualifying artist plays could be calculated.'},
- {eyebrow:'THE ONE ON REPEAT',title:top?top.name:'No top track yet',body:top?top.artist+' · '+fmt(top.plays)+' recorded plays. Rankings count track + artist records.':'Upload records with track and artist names to unlock this slide.'},
- {eyebrow:'THE BIG MONTH',title:month,body:hoursText(s.months[s.maxMonth])+' recorded listening time. Monthly totals use UTC timestamps.'},
- {eyebrow:'2026 SO FAR',title:'Receipts over vibes.',body:'This recap comes from the files you selected. Genre, mood and popularity are not guessed from track names.'}
-];slideIndex=0;renderSlide()}
-function renderSlide(){const el=$('storySlide');el.replaceChildren();if(!slides.length)return;const s=slides[slideIndex],ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');ey.className='eyebrow';ey.textContent=s.eyebrow;h.textContent=s.title;p.textContent=s.body;if(s.number){const n=document.createElement('div');n.className='story-number';n.textContent=s.number;el.append(ey,n,h,p)}else el.append(ey,h,p);$('storyCounter').textContent=(slideIndex+1)+' / '+slides.length;const prog=$('storyProgress');prog.replaceChildren();slides.forEach((_,i)=>{const x=document.createElement('span');if(i<=slideIndex)x.className='active';prog.append(x)});$('storyPrev').disabled=slideIndex===0;$('storyNext').disabled=slideIndex===slides.length-1;$('downloadCard').disabled=false;$('storyNext').textContent=slideIndex===slides.length-1?'END OF STORY ✓':'NEXT SLIDE ↗';el.classList.remove('story-refresh');void el.offsetWidth;el.classList.add('story-refresh')}
-function wrapText(ctx,text,x,y,width,lineHeight){let line='';for(const word of String(text).split(/\s+/)){const test=line?line+' '+word:word;if(ctx.measureText(test).width>width&&line){ctx.fillText(line,x,y);line=word;y+=lineHeight}else line=test}if(line)ctx.fillText(line,x,y)}
-function downloadCard(){
- if(!slides.length)return;
- const s=slides[slideIndex],canvas=document.createElement('canvas');
- canvas.width=1080;canvas.height=1920;
- const c=canvas.getContext('2d'),theme=document.documentElement.dataset.theme;
- const palettes={
-  spotify:{bg:'#101010',panel:'#191919',accent:'#c8ff00',accent2:'#ff4fa3',ink:'#f7f7f2',muted:'#b7b7ad',footer:'YOUR YEAR. YOUR RECEIPTS.'},
-  y2k:{bg:'#220d35',panel:'#39134d',accent:'#ff91df',accent2:'#a7a0ff',ink:'#fff5ff',muted:'#f5bde9',footer:'STAY SPARKLY. STAY ICONIC. ✧'},
-  futuristic:{bg:'#101317',panel:'#1e242a',accent:'#e9f2f8',accent2:'#8f9da9',ink:'#f4f7f9',muted:'#aeb8c1',footer:'ARCHIVE COMPLETE // SIGNAL VERIFIED'}
- };
- const p=palettes[theme]||palettes.spotify;
- c.fillStyle=p.bg;c.fillRect(0,0,1080,1920);
- // Framed editorial card; each theme gets its own visual language.
- c.strokeStyle=p.accent;c.lineWidth=3;c.strokeRect(34,34,1012,1852);
- c.fillStyle=p.panel;c.fillRect(54,54,972,1812);
- if(theme==='spotify'){
-  c.fillStyle=p.accent;c.fillRect(54,54,972,16);
-  c.save();c.translate(900,290);c.rotate(-.22);c.fillStyle=p.accent2;c.fillRect(-115,-115,230,230);c.rotate(.44);c.fillStyle=p.accent;c.fillRect(-92,-92,184,184);c.restore();
-  c.fillStyle=p.bg;c.beginPath();c.arc(900,290,52,0,Math.PI*2);c.fill();
-  for(let i=0;i<8;i++){c.fillStyle=i%2?p.accent:p.accent2;c.fillRect(76+i*118,1510+(i%2)*26,70,8)}
- }else if(theme==='y2k'){
-  const g=c.createLinearGradient(80,80,1000,1840);g.addColorStop(0,'#ff8bdc');g.addColorStop(.48,'#a59aff');g.addColorStop(1,'#68dfff');
-  c.strokeStyle=g;c.lineWidth=9;c.strokeRect(72,72,936,1776);
-  for(let i=0;i<75;i++){
-   const x=(i*137)%1000+40,y=(i*211)%1770+80;
-   c.fillStyle=i%3===0?'#fff4ff':i%2?p.accent:p.accent2;
-   c.font=(i%4===0?'30px':'19px')+' sans-serif';c.fillText(i%5===0?'✧':i%3===0?'✦':'✶',x,y);
-  }
-  const orb=c.createRadialGradient(865,260,12,865,260,205);orb.addColorStop(0,'#fff5ff');orb.addColorStop(.24,'#ff91df');orb.addColorStop(1,'#a7a0ff');
-  c.fillStyle=orb;c.beginPath();c.arc(865,260,145,0,Math.PI*2);c.fill();
- }else{
-  const metal=c.createLinearGradient(100,100,980,450);metal.addColorStop(0,'#66727d');metal.addColorStop(.25,'#f8fcff');metal.addColorStop(.5,'#7f8b95');metal.addColorStop(.72,'#edf3f7');metal.addColorStop(1,'#58636d');
-  c.strokeStyle=metal;c.lineWidth=10;c.strokeRect(72,72,936,1776);
-  c.strokeStyle='#64717d';c.lineWidth=1;
-  for(let y=180;y<1750;y+=48){c.beginPath();c.moveTo(78,y);c.lineTo(1002,y);c.stroke()}
-  c.fillStyle=metal;c.beginPath();c.arc(865,265,148,0,Math.PI*2);c.fill();
-  c.fillStyle=p.bg;c.beginPath();c.arc(865,265,94,0,Math.PI*2);c.fill();
-  c.strokeStyle=p.accent;c.lineWidth=3;c.beginPath();c.arc(865,265,174,0,Math.PI*2);c.stroke();
- }
- c.fillStyle=p.ink;c.font='600 27px monospace';c.fillText(theme==='y2k'?'WRAPPED.exe ✧ YOUR YEAR':theme==='futuristic'?'WRAPPED.exe // AUDIO ARCHIVE':'WRAPPED.exe / 2026',82,132);
- c.fillStyle=p.accent;c.font='700 28px monospace';
- const eyebrow=theme==='y2k'?'✧ '+s.eyebrow.toUpperCase()+' ✧':theme==='futuristic'?'// '+s.eyebrow.toUpperCase():s.eyebrow.toUpperCase();
- wrapText(c,eyebrow,82,520,850,42);
- c.fillStyle=p.ink;c.font='700 82px sans-serif';wrapText(c,s.title,82,675,850,98);
- let y=930;
- if(s.number){
-  const numGrad=c.createLinearGradient(82,0,850,0);numGrad.addColorStop(0,p.accent);numGrad.addColorStop(1,p.accent2);
-  c.fillStyle=numGrad;c.font='700 130px sans-serif';wrapText(c,s.number,82,1000,850,145);y=1180;
- }
- c.fillStyle=p.ink;c.font='400 35px sans-serif';wrapText(c,s.body,82,y,850,54);
- c.fillStyle=p.accent2;c.fillRect(82,1608,916,3);
- c.fillStyle=p.accent;c.font='700 27px monospace';c.fillText(p.footer,82,1680);
- c.fillStyle=p.muted;c.font='22px monospace';
- c.fillText('CARD '+String(slideIndex+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0'),82,1740);
- c.fillText(theme==='y2k'?'made with real receipts & extra glitter':theme==='futuristic'?'LOCAL PROCESSING // NO DATA UPLOADED':'Generated locally from your selected history',82,1790);
- canvas.toBlob(blob=>{
-  if(!blob){$('fileStatus').textContent='This browser could not create the image.';return}
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  const safeTheme=theme.replace(/[^a-z0-9-]/gi,'');
-  a.href=url;a.download='wrapped-2026-'+safeTheme+'-card-'+String(slideIndex+1).padStart(2,'0')+'.png';
-  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-  $('fileStatus').textContent='Saved card '+(slideIndex+1)+' of '+slides.length+' as a '+theme+' PNG. Your history stays in this browser.';
- },'image/png');
+function getStoryRange(){
+ if($('storyRangeMode')?.value!=='dashboard')return{valid:true,kind:'wrapped2026',start:Date.UTC(YEAR,0,1),end:WRAPPED_CUTOFF,label:'2026 Wrapped (Jan 1–Nov 15 UTC)'};
+ const mode=$('analyticsRange').value;
+ return mode==='custom'?WrappedAnalytics.dateRange('custom',{start:$('rangeStart').value,end:$('rangeEnd').value}):WrappedAnalytics.dateRange(mode);
 }
-function renderMine(rows,count,diagnostics){myHistoryRows=rows.slice();window.dispatchEvent(new CustomEvent('wrapped-history-updated',{detail:{rows:myHistoryRows,diagnostics}}));mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);renderLifetimeAnalytics();$('fileStatus').textContent='Read '+count+' selected JSON file(s) locally; '+fmt(diagnostics?.filesParsed??count)+' contained recognized history arrays. '+fmt(diagnostics?.acceptedRecords??rows.length)+' records accepted, '+fmt(diagnostics?.rejectedRecords??0)+' malformed records rejected, '+fmt(diagnostics?.invalidTimestamps??0)+' invalid/missing timestamps, '+fmt(diagnostics?.missingDuration??0)+' missing durations, '+fmt(diagnostics?.invalidDuration??0)+' malformed/negative durations, and '+fmt(diagnostics?.possibleDuplicateFiles?.length??0)+' possible duplicate file selections. Found '+fmt(s.events)+' track records and '+fmt(s.plays)+' qualifying plays (>30 seconds) in the Wrapped-style window (Jan 1–Nov 15, 2026). Artist scores are estimates (1.0 primary, 0.5 explicitly listed secondary artists). No files leave this browser.';renderCompare()}
+function buildSlides(){
+ if(!myHistoryRows.length){slides=[];slideIndex=0;renderSlide();return}
+ const range=getStoryRange();
+ if(!range.valid){slides=[{type:'error',eyebrow:'DATE RANGE NEEDS ATTENTION',title:'Check the selected dates.',body:range.error||'Choose a valid date range before building this story.'}];slideIndex=0;renderSlide();return}
+ const result=WrappedAnalytics.buildStory(myHistoryRows,{range,incomplete:true,requireTrackAndArtistForDuration:true});
+ slides=result.stories||[];slideIndex=0;renderSlide();
+}
+function renderSlide(){
+ const el=$('storySlide');el.replaceChildren();
+ if(!slides.length){
+  const ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');
+  ey.className='eyebrow';ey.textContent='WAITING FOR THE RECEIPTS';h.textContent='Your year has a soundtrack.';p.textContent='Import your history to unlock a verified sequence of listening stories.';
+  el.append(ey,h,p);$('storyCounter').textContent='0 / 0';$('storyProgress').replaceChildren();
+  $('storyPrev').disabled=true;$('storyNext').disabled=true;$('downloadCard').disabled=true;$('storyNext').textContent='NEXT SLIDE ↗';
+  return;
+ }
+ const s=slides[slideIndex],ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');
+ ey.className='eyebrow';ey.textContent=s.eyebrow||'YOUR LISTENING STORY';h.id='storySlideHeading';h.textContent=s.title||'Listening story';p.textContent=s.body||'';
+ el.setAttribute('aria-label','Story '+(slideIndex+1)+' of '+slides.length);
+ el.append(ey);
+ if(s.number){const n=document.createElement('div');n.className='story-number';n.textContent=s.number;el.append(n)}
+ el.append(h);
+ if(Array.isArray(s.list)&&s.list.length){
+  const ul=document.createElement('ul');ul.className='story-list';
+  s.list.forEach(value=>{const li=document.createElement('li');li.textContent=value;ul.append(li)});el.append(ul);
+ }
+ el.append(p);
+ const meta=document.createElement('p');meta.className='story-meta';meta.textContent=[s.rangeLabel,s.caveat].filter(Boolean).join(' · ');
+ if(meta.textContent)el.append(meta);
+ $('storyCounter').textContent=(slideIndex+1)+' / '+slides.length;
+ const prog=$('storyProgress');prog.replaceChildren();prog.setAttribute('role','progressbar');prog.setAttribute('aria-valuemin','1');prog.setAttribute('aria-valuemax',String(slides.length));prog.setAttribute('aria-valuenow',String(slideIndex+1));prog.setAttribute('aria-valuetext','Story '+(slideIndex+1)+' of '+slides.length);
+ slides.forEach((_,i)=>{const x=document.createElement('span');if(i<=slideIndex)x.className='active';x.setAttribute('aria-hidden','true');prog.append(x)});
+ $('storyPrev').disabled=slideIndex===0;$('storyNext').disabled=slideIndex===slides.length-1;
+ $('downloadCard').disabled=s.type==='empty'||s.type==='error';
+ $('storyNext').textContent=slideIndex===slides.length-1?'END OF STORY ✓':'NEXT SLIDE ↗';
+ el.classList.remove('story-refresh');void el.offsetWidth;el.classList.add('story-refresh');
+}
+function wrapText(ctx,text,x,y,width,lineHeight,maxLines=100){
+ const lines=[];
+ for(const paragraph of String(text??'').split(/\n/)){
+  if(!paragraph.trim()){lines.push('');continue}
+  let line='';
+  for(const word of paragraph.split(/\s+/)){
+   if(ctx.measureText(word).width>width){
+    if(line){lines.push(line);line=''}
+    let chunk='';
+    for(const char of Array.from(word)){
+     if(chunk&&ctx.measureText(chunk+char).width>width){lines.push(chunk);chunk=char}else chunk+=char;
+    }
+    line=chunk;
+   }else{
+    const test=line?line+' '+word:word;
+    if(ctx.measureText(test).width>width&&line){lines.push(line);line=word}else line=test;
+   }
+  }
+  if(line)lines.push(line);
+ }
+ let visible=lines;
+ if(lines.length>maxLines){
+  visible=lines.slice(0,maxLines);
+  let last=visible[visible.length-1]||'';
+  while(last&&ctx.measureText(last+'…').width>width)last=Array.from(last).slice(0,-1).join('');
+  visible[visible.length-1]=last+'…';
+ }
+ visible.forEach((line,index)=>ctx.fillText(line,x,y+index*lineHeight));
+ return y+visible.length*lineHeight;
+}
+function downloadCard(){
+ const s=slides[slideIndex];
+ if(!s||s.type==='empty'||s.type==='error'){ $('fileStatus').textContent='Choose a story with verified listening statistics before exporting a card.';return; }
+ try{
+  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;
+  const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas drawing is unavailable in this browser.');
+  const theme=document.documentElement.dataset.theme;
+  const palettes={
+   spotify:{bg:'#101010',panel:'#191919',accent:'#c8ff00',accent2:'#ff4fa3',ink:'#f7f7f2',muted:'#b7b7ad',footer:'YOUR YEAR. YOUR RECEIPTS.'},
+   y2k:{bg:'#220d35',panel:'#39134d',accent:'#ff91df',accent2:'#a7a0ff',ink:'#fff5ff',muted:'#f5bde9',footer:'STAY SPARKLY. STAY ICONIC. ✧'},
+   futuristic:{bg:'#101317',panel:'#1e242a',accent:'#e9f2f8',accent2:'#8f9da9',ink:'#f4f7f9',muted:'#aeb8c1',footer:'ARCHIVE COMPLETE // SIGNAL VERIFIED'}
+  };
+  const p=palettes[theme]||palettes.spotify;
+  ctx.fillStyle=p.bg;ctx.fillRect(0,0,1080,1920);ctx.strokeStyle=p.accent;ctx.lineWidth=3;ctx.strokeRect(34,34,1012,1852);ctx.fillStyle=p.panel;ctx.fillRect(54,54,972,1812);
+  if(theme==='spotify'){
+   ctx.fillStyle=p.accent;ctx.fillRect(54,54,972,16);ctx.save();ctx.translate(900,290);ctx.rotate(-.22);ctx.fillStyle=p.accent2;ctx.fillRect(-115,-115,230,230);ctx.rotate(.44);ctx.fillStyle=p.accent;ctx.fillRect(-92,-92,184,184);ctx.restore();ctx.fillStyle=p.bg;ctx.beginPath();ctx.arc(900,290,52,0,Math.PI*2);ctx.fill();
+  }else if(theme==='y2k'){
+   const g=ctx.createLinearGradient(80,80,1000,1840);g.addColorStop(0,'#ff8bdc');g.addColorStop(.48,'#a59aff');g.addColorStop(1,'#68dfff');ctx.strokeStyle=g;ctx.lineWidth=9;ctx.strokeRect(72,72,936,1776);
+   for(let i=0;i<55;i++){const x=(i*137)%1000+40,y=(i*211)%1770+80;ctx.fillStyle=i%3===0?'#fff4ff':i%2?p.accent:p.accent2;ctx.font='24px sans-serif';ctx.fillText(i%5===0?'✧':i%3===0?'✦':'✶',x,y)}
+  }else{
+   const metal=ctx.createLinearGradient(100,100,980,450);metal.addColorStop(0,'#66727d');metal.addColorStop(.25,'#f8fcff');metal.addColorStop(.5,'#7f8b95');metal.addColorStop(.72,'#edf3f7');metal.addColorStop(1,'#58636d');ctx.strokeStyle=metal;ctx.lineWidth=10;ctx.strokeRect(72,72,936,1776);ctx.strokeStyle='#64717d';ctx.lineWidth=1;
+   for(let y=180;y<1750;y+=48){ctx.beginPath();ctx.moveTo(78,y);ctx.lineTo(1002,y);ctx.stroke()}
+  }
+  ctx.fillStyle=p.ink;ctx.font='600 27px monospace';ctx.fillText(theme==='y2k'?'WRAPPED.exe ✧ YOUR STORY':theme==='futuristic'?'WRAPPED.exe // AUDIO ARCHIVE':'WRAPPED.exe / LISTENING STORY',82,132);
+  ctx.fillStyle=p.accent;ctx.font='700 25px monospace';wrapText(ctx,(theme==='y2k'?'✧ ':'')+String(s.eyebrow||'YOUR LISTENING STORY').toUpperCase(),82,520,850,38,2);
+  ctx.fillStyle=p.ink;ctx.font='700 76px sans-serif';const titleEnd=wrapText(ctx,s.title||'Your recap',82,635,850,84,3);
+  let y=Math.max(900,titleEnd+28);
+  if(s.number){const numGrad=ctx.createLinearGradient(82,0,850,0);numGrad.addColorStop(0,p.accent);numGrad.addColorStop(1,p.accent2);ctx.fillStyle=numGrad;ctx.font='700 112px sans-serif';y=wrapText(ctx,s.number,82,y,850,120,1)+18}
+  const bodyText=[...(Array.isArray(s.list)?s.list:[]),s.body||''].filter(Boolean).join('\n');
+  ctx.fillStyle=p.ink;ctx.font='400 29px sans-serif';wrapText(ctx,bodyText,82,Math.max(1070,y),850,43,6);
+  if($('includeRangeOnCard').checked){ctx.fillStyle=p.accent;ctx.font='600 21px monospace';wrapText(ctx,'RANGE: '+(s.rangeLabel||'Selected date range'),82,1450,850,28,2)}
+  if($('includeMethodOnCard').checked){ctx.fillStyle=p.muted;ctx.font='20px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',82,1510,850,27,2)}
+  ctx.fillStyle=p.accent2;ctx.fillRect(82,1608,916,3);ctx.fillStyle=p.accent;ctx.font='700 27px monospace';ctx.fillText(p.footer,82,1680);ctx.fillStyle=p.muted;ctx.font='22px monospace';ctx.fillText('CARD '+String(slideIndex+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0'),82,1740);ctx.fillText(theme==='y2k'?'made with real receipts & extra glitter':theme==='futuristic'?'LOCAL PROCESSING // NO DATA UPLOADED':'Generated locally from selected history',82,1790);
+  canvas.toBlob(blob=>{
+   if(!blob){$('fileStatus').textContent='Image export failed in this browser. Try another browser or save the story text manually.';return}
+   try{
+    const url=URL.createObjectURL(blob),link=document.createElement('a'),safeType=String(s.type||'story').replace(/[^a-z0-9-]/gi,'').toLowerCase();
+    link.href=url;link.download='wrapped-story-card-'+safeType+'-'+String(slideIndex+1).padStart(2,'0')+'.png';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $('fileStatus').textContent='Saved story card '+(slideIndex+1)+' of '+slides.length+' as a PNG. Only this story card was exported; raw history stays in this browser.';
+   }catch(error){$('fileStatus').textContent='The image was created but the download could not start. Check your browser download settings and try again.'}
+  },'image/png');
+ }catch(error){$('fileStatus').textContent='Image export failed: '+(error&&error.message?error.message:'unsupported canvas operation')+'. Your listening history was not uploaded.'}
+}
+function renderMine(rows,count,diagnostics){myHistoryRows=rows.slice();window.dispatchEvent(new CustomEvent('wrapped-history-updated',{detail:{rows:myHistoryRows,diagnostics}}));mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides();renderLifetimeAnalytics();$('fileStatus').textContent='Read '+count+' selected JSON file(s) locally; '+fmt(diagnostics?.filesParsed??count)+' contained recognized history arrays. '+fmt(diagnostics?.acceptedRecords??rows.length)+' records accepted, '+fmt(diagnostics?.rejectedRecords??0)+' malformed records rejected, '+fmt(diagnostics?.invalidTimestamps??0)+' invalid/missing timestamps, '+fmt(diagnostics?.missingDuration??0)+' missing durations, '+fmt(diagnostics?.invalidDuration??0)+' malformed/negative durations, and '+fmt(diagnostics?.possibleDuplicateFiles?.length??0)+' possible duplicate file selections. Found '+fmt(s.events)+' track records and '+fmt(s.plays)+' qualifying plays (>30 seconds) in the Wrapped-style window (Jan 1–Nov 15, 2026). Artist scores are estimates (1.0 primary, 0.5 explicitly listed secondary artists). No files leave this browser.';renderCompare()}
 function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
 function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
 $('historyFiles').addEventListener('change',async e=>{
