@@ -90,7 +90,7 @@
   }
   function renderLore(){
     const lore=loreFor(summary),el=$('loreCard');if(!el)return;
-    el.innerHTML='<p class="eyebrow">YOUR LISTENING LORE</p><div class="lore-stamp" aria-hidden="true">'+(lore.kind==='repeat'?'↻':lore.kind==='artist'?'✳':lore.kind==='catalog'?'✦':lore.kind==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(lore.title)+'</h2><p>'+escapeHTML(lore.body)+'</p><details><summary>Why this observation?</summary><p>'+escapeHTML(lore.basis)+'</p></details>';
+    el.innerHTML='<p class="eyebrow">YOUR LISTENING LORE</p><div class="lore-stamp" aria-hidden="true">'+(lore.kind==='repeat'?'↻':lore.kind==='artist'?'✳':lore.kind==='catalog'?'✦':lore.kind==='hour'?'◷':'✧')+'</div><h2 id="loreHeading">'+escapeHTML(lore.title)+'</h2><p>'+escapeHTML(lore.body)+'</p><details><summary>Why this observation?</summary><p>'+escapeHTML(lore.basis)+'</p></details>';
     $('loreRangeLabel').textContent=range.label||'All time';
   }
   function rankingCard(item,rank,type){
