@@ -583,3 +583,21 @@ test('Phase 6 story-first navigation, portrait export, keyboard, mobile and redu
   assert.match(css,/@media\(max-width:560px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
+
+
+test('Phase 6 default story range preserves the Jan 1–Nov 15 2026 UTC window', () => {
+  const range=E.rangeFor('wrapped2026');
+  assert.equal(range.valid,true);
+  assert.equal(range.start,Date.UTC(2026,0,1));
+  assert.equal(range.end,Date.UTC(2026,10,16)-1);
+  assert.match(range.label,/Custom range/);
+});
+
+test('Phase 6 invalid custom range has a safe story empty state', () => {
+  const range=E.rangeFor('custom','','');
+  assert.equal(range.valid,false);
+  const stories=E.makeStory({valid:false,error:range.error,records:[]},range);
+  assert.equal(stories.length,1);
+  assert.equal(stories[0].type,'empty');
+  assert.match(stories[0].title,/range/i);
+});
