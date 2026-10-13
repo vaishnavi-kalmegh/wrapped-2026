@@ -113,3 +113,5 @@ node --test tests/analytics.test.js
 ```
 
 These commands are also run by the existing GitHub Actions workflow on relevant pushes to `main` and pull requests. A successful workflow verifies those commands against synthetic fixtures; it does not replace a browser/mobile smoke test with a real export.
+
+- Possible duplicate file selections with matching name, size and modification time are warned about but retained; the app never guesses that matching events should be deduplicated.
