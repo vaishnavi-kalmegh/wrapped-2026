@@ -72,3 +72,62 @@ test('this-year and last-12-month presets use a supplied current date', () => {
   assert.equal(new Date(y.end).toISOString(),'2026-12-31T23:59:59.999Z');
   const r=A.dateRange('last12Months',{now:'2026-10-13T12:00:00Z'}); assert.equal(new Date(r.start).toISOString(),'2025-10-13T12:00:00.000Z');
 });
+
+
+test('track and album recorded time includes short events while play counts require over 30 seconds', () => {
+  const s=A.summarize([
+    row('2026-01-01T00:00:00Z','Mix','Artist',60000,{master_metadata_album_album_name:'Album'}),
+    row('2026-01-01T00:01:00Z','Mix','Artist',10000,{master_metadata_album_album_name:'Album'}),
+    row('2026-01-01T00:02:00Z','Short only','Other',20000,{master_metadata_album_album_name:'Short Album'})
+  ]);
+  assert.equal(s.tracks.length,1);
+  assert.equal(s.tracks[0].plays,1);
+  assert.equal(s.tracks[0].ms,70000);
+  assert.equal(s.albums.length,1);
+  assert.equal(s.albums[0].ms,70000);
+});
+test('track and album rankings sort by qualifying plays then recorded duration', () => {
+  const s=A.summarize([
+    row('2026-01-01T00:00:00Z','Less plays','A',40000,{master_metadata_album_album_name:'A1'}),
+    row('2026-01-02T00:00:00Z','More plays','B',40000,{master_metadata_album_album_name:'B1'}),
+    row('2026-01-03T00:00:00Z','More plays','B',45000,{master_metadata_album_album_name:'B1'})
+  ]);
+  assert.equal(s.tracks[0].name,'More plays');
+  assert.equal(s.albums[0].album,'B1');
+});
+test('album groups preserve display metadata and separate same title by artist', () => {
+  const s=A.summarize([
+    row('2026-01-01T00:00:00Z','One','Artist A',40000,{master_metadata_album_album_name:'Shared Album'}),
+    row('2026-01-02T00:00:00Z','Two','Artist B',50000,{master_metadata_album_album_name:'Shared Album'})
+  ]);
+  assert.equal(s.albums.length,2);
+  assert.deepEqual(new Set(s.albums.map(x=>x.artist)),new Set(['Artist A','Artist B']));
+  assert.equal(s.albums.find(x=>x.artist==='Artist A').album,'Shared Album');
+});
+test('multi-year month buckets retain year and respect date filters', () => {
+  const rows=[row('2024-01-02T12:00:00Z','Old','A',40000),row('2025-01-02T12:00:00Z','Middle','B',50000),row('2026-01-02T12:00:00Z','Now','C',60000)];
+  const all=A.summarize(rows),filtered=A.summarize(rows,{range:custom('2025-01-01','2026-12-31')});
+  assert.equal(all.monthsByYear.get('2024-01'),40000);
+  assert.equal(all.monthsByYear.get('2025-01'),50000);
+  assert.equal(all.monthsByYear.get('2026-01'),60000);
+  assert.equal(filtered.total,110000);
+  assert.equal(filtered.monthsByYear.has('2024-01'),false);
+});
+test('chronological event sorting puts newest dated events first and undated records last', () => {
+  const normalized=A.normalizeRecords([
+    row('2026-01-01T00:00:00Z','Old','A',40000),
+    row('not-a-date','Undated','A',40000),
+    row('2026-03-01T00:00:00Z','New','A',40000)
+  ]).records;
+  assert.deepEqual(A.sortEvents(normalized).map(x=>x.track),['New','Old','Undated']);
+  assert.deepEqual(A.sortEvents(normalized,'asc').map(x=>x.track),['Old','New','Undated']);
+});
+test('missing album metadata is never inferred and missing names remain safely countable', () => {
+  const s=A.summarize([
+    row('2026-01-01T00:00:00Z','Known','Artist',45000),
+    {ts:'2026-01-02T00:00:00Z',ms_played:60000,master_metadata_album_album_name:'Album'}
+  ]);
+  assert.equal(s.albums.length,0);
+  assert.equal(s.total,105000);
+  assert.equal(s.tracks.length,1);
+});
