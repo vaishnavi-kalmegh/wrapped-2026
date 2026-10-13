@@ -471,3 +471,8 @@ html[data-theme="futuristic"] .lore-card>p:not(.eyebrow),html[data-theme="futuri
 html[data-theme="futuristic"] .lore-card .eyebrow,html[data-theme="futuristic"] .lore-card summary{color:#27323d}
 html[data-theme="futuristic"] .number-tile-primary{background:#dfe4e8;color:#101418;border-color:#aeb7c0}
 html[data-theme="futuristic"] .number-tile-primary>span,html[data-theme="futuristic"] .number-tile-primary small{color:#4c5864}
+
+.story-list li{grid-template-columns:22px 34px minmax(0,1fr) auto}
+.story-item-art,.story-item-placeholder{width:34px;height:34px;object-fit:cover;border-radius:4px;background:color-mix(in srgb,var(--pink) 24%,var(--panel));color:var(--lime);display:grid;place-items:center}
+.story-list li>div{min-width:0}
+@media(max-width:560px){.story-list li{grid-template-columns:18px 28px minmax(0,1fr)}.story-item-art,.story-item-placeholder{width:28px;height:28px}.story-list li>b{grid-column:3}}
