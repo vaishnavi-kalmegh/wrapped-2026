@@ -118,6 +118,12 @@
       </section>
       <section class="artwork-privacy"><span aria-hidden="true">↗</span><p><strong>Artwork lookup is optional and external.</strong> To find exact matches, this page sends track title + primary artist to Apple's public iTunes Search API and artist names to Wikipedia's public summary API. It never sends raw history files. If a match is unavailable, the card uses a designed fallback. Block external requests to keep all lookups off.</p></section>
     </section>
+    <div id="storyViewer" class="story-viewer" role="dialog" aria-modal="true" aria-label="Full-screen listening story" hidden>
+      <div class="story-viewer-top"><a class="wordmark" href="#experience" id="storyBrand">WRAPPED<span>.exe</span></a><span id="storyStep" class="story-step" aria-live="polite">STORY 1 / 1</span><button id="storyClose" class="button button-quiet" type="button" aria-label="Exit full-screen story">EXIT ✕</button></div>
+      <div id="storyProgress" class="story-viewer-progress" role="progressbar" aria-label="Story progress" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1"></div>
+      <article id="storyCard" class="story-card" tabindex="-1" aria-live="polite" aria-atomic="true"></article>
+      <div class="story-viewer-bottom"><button id="storyPrevious" class="button button-quiet" type="button" disabled>← PREVIOUS</button><p id="storyDownloadStatus" aria-live="polite">Move through your recap. Save individual cards only if you want to.</p><button id="storyDownload" class="button button-quiet" type="button">SAVE PNG ↓</button><button id="storyNext" class="button button-bright" type="button">NEXT ↗</button></div>
+    </div>
 
     <div class="legacy-interface" hidden aria-hidden="true">
     <section class="lifetime-section-head">
