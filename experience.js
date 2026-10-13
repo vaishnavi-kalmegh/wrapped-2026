@@ -230,7 +230,7 @@
         if(index>=0&&index<Math.min(5,limit)){renderRanks(type);renderStory();}
       }).catch(()=>{
         if(token===requestToken[type])artworkCache.set(cacheKey,{url:null,expiresAt:Date.now()+ARTWORK_ERROR_TTL});
-      }).finally(()=>{if(artworkPending.get(cacheKey)===task)artworkPending.delete(cacheKey);});
+      }).finally(()=>{if(artworkPending.get(cacheKey)===task)artworkPending.delete(cacheKey);if(token!==requestToken[type]&&$('artworkLookupEnabled')?.checked)renderRanks(type);});
     });
   }
   function isExactArtistPage(title,name){return Boolean(title&&name&&key(title)===key(name));}
