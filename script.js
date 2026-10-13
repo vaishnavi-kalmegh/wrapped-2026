@@ -70,45 +70,26 @@ function applyTheme(theme) {
 
 const YEAR = 2026, WRAPPED_CUTOFF = Date.UTC(YEAR, 10, 15, 23, 59, 59, 999), fmt = n => new Intl.NumberFormat(undefined, {maximumFractionDigits: 1}).format(n), clean = v => String(v ?? '').trim();
 let mine = null, friend = null, slides = [], slideIndex = 0;
-function dateOf(r){const v=r.endTime??r.end_time??r.timestamp??r.played_at??r.ts;if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d}
-function trackOf(r){return clean(r.trackName??r.track_name??r.master_metadata_track_name??r.name)}
-function primaryArtistOf(r){
- const v=r.master_metadata_album_artist_name??r.album_artist_name??r.albumArtistName??r.artistName??r.artist_name??r.artist;
- return clean(Array.isArray(v)?v[0]:v);
+function dateOf(r){const n=WrappedAnalytics.normalizeRecord(r,0);return n&&n.timestamp!=null?new Date(n.timestamp):null}
+function trackOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.track||''}
+function primaryArtistOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.primaryArtist||''}
+function secondaryArtistsOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.secondaryArtists||[]}
+function artistsOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.artists||[]}
+function msOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.durationMs||0}
+function rowsOf(x){return WrappedAnalytics.rowsOf(x)}
+async function loadFiles(files){
+ const results=[];
+ for(const f of [...files]){
+  try{results.push({name:f.name,data:JSON.parse(await f.text())})}
+  catch{results.push({name:f.name,error:'Invalid JSON or unreadable file'})}
+ }
+ const parsed=WrappedAnalytics.inspectFiles(results);
+ const errors=[...parsed.diagnostics.invalidFiles.map(x=>x.name+': '+x.reason),...parsed.diagnostics.emptyFiles.map(x=>x+': no recognized history array')];
+ return{rows:parsed.rows,errors,count:files.length,diagnostics:parsed.diagnostics};
 }
-function secondaryArtistsOf(r){
- const primary=primaryArtistOf(r), raw=r.featured_artists??r.featuredArtists??r.secondary_artist_names??r.secondaryArtists??r.contributing_artists??r.contributingArtists;
- const explicit=Array.isArray(raw)?raw.map(clean):clean(raw)?[clean(raw)]:[];
- const artistField=r.artistName??r.artist_name??r.artist;
- const listed=Array.isArray(artistField)?artistField.map(clean):[];
- return [...new Set([...explicit,...listed.slice(1)].filter(a=>a&&a!==primary))];
-}
-function artistsOf(r){return [...new Set([primaryArtistOf(r),...secondaryArtistsOf(r)].filter(Boolean))]}
-function msOf(r){const n=Number(r.msPlayed??r.ms_played??r.duration_ms??0);return Number.isFinite(n)&&n>0?n:0}
-function rowsOf(x){if(Array.isArray(x))return x;for(const k of ['items','streamingHistory','streaming_history','endsong'])if(Array.isArray(x?.[k]))return x[k];return []}
-async function loadFiles(files){const rows=[],errors=[];for(const f of [...files])try{const a=rowsOf(JSON.parse(await f.text()));if(a.length)rows.push(...a);else errors.push(f.name+': no recognized history array')}catch{errors.push(f.name+': invalid JSON')}return{rows,errors,count:files.length}}
-function add(map,key,ms,weight=1){const v=map.get(key)||{plays:0,ms:0};v.plays+=weight;v.ms+=ms;map.set(key,v)}
-function rank(map){return [...map.entries()].sort((a,b)=>b[1].plays-a[1].plays||b[1].ms-a[1].ms||a[0].localeCompare(b[0]))}
 function summarize(rows){
- const tm=new Map(),am=new Map(),artists=new Set(),days=new Map(),months=Array(12).fill(0),hours=Array(24).fill(0);let total=0,plays=0,events=0;
- for(const r of rows){const d=dateOf(r);if(!d||d.getUTCFullYear()!==YEAR||d.getTime()>WRAPPED_CUTOFF||!trackOf(r)||!primaryArtistOf(r)||r.episode_name||r.audiobook_title)continue;
- const t=trackOf(r),as=artistsOf(r),ms=msOf(r),day=d.toISOString().slice(0,10);
- events++;total+=ms;days.set(day,(days.get(day)||0)+ms);months[d.getUTCMonth()]+=ms;hours[d.getUTCHours()]+=ms;
- // Spotify-style qualifying play: more than 30 seconds recorded for the track.
- // Short skips still contribute to listening duration, but not to play rankings.
- if(ms>30000){
-  plays++;
-  add(tm,t+'\u0000'+as.join(', '),ms);
-  const primary=primaryArtistOf(r);
-  artists.add(primary);
-  add(am,primary,ms,1);
-  secondaryArtistsOf(r).forEach(a=>{artists.add(a);add(am,a,ms,0.5)});
- }
- }
- const tracks=rank(tm).map(([key,v])=>{const [name,...rest]=key.split('\u0000');return{name,artist:rest.join('\u0000'),key,...v}});
- const artistRank=rank(am).map(([name,v])=>({name,...v}));
- const maxDay=[...days.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
- return{tracks,artists:artistRank,artistNames:artists,days,months,hours,total,plays,events,activeDays:days.size,maxDay,maxMonth:months.indexOf(Math.max(...months))};
+ const range=WrappedAnalytics.dateRange('custom',{start:'2026-01-01',end:'2026-11-15'});
+ return WrappedAnalytics.summarize(rows,{range,requireTrackAndArtistForDuration:true});
 }
 function renderRank(id,arr,kind){const el=$(id);el.replaceChildren();if(!arr.length){const li=document.createElement('li');li.className='empty-row';li.textContent='No matching 2026 records found.';el.append(li);return}
  arr.slice(0,5).forEach(v=>{const li=document.createElement('li'),wrap=document.createElement('div'),name=document.createElement('span'),sub=document.createElement('span'),count=document.createElement('span');name.className='rank-name';name.textContent=kind==='artist'?v.name:v.name;sub.className='rank-sub';sub.textContent=kind==='artist'?'weighted streams (approx.)':'by '+v.artist;name.append(sub);wrap.append(name);count.className='rank-count';count.textContent=kind==='artist'?fmt(v.plays)+' score':fmt(v.plays)+' plays';li.append(wrap,count);el.append(li)})}
@@ -198,11 +179,11 @@ function downloadCard(){
   $('fileStatus').textContent='Saved card '+(slideIndex+1)+' of '+slides.length+' as a '+theme+' PNG. Your history stays in this browser.';
  },'image/png');
 }
-function renderMine(rows,count){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Processed '+count+' JSON file(s). Found '+fmt(s.events)+' track records and '+fmt(s.plays)+' qualifying plays (>30 seconds) in the Wrapped-style window (Jan 1–Nov 15, 2026). Artist scores use 1.0 for primary artists and 0.5 for explicitly listed secondary artists; this is an approximation, not Spotify’s undisclosed weighting. Calculations stayed in this browser.';renderCompare()}
+function renderMine(rows,count,diagnostics){mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides(s);$('fileStatus').textContent='Read '+count+' selected JSON file(s) locally; '+fmt(diagnostics?.filesParsed??count)+' contained recognized history arrays. '+fmt(diagnostics?.acceptedRecords??rows.length)+' records accepted, '+fmt(diagnostics?.rejectedRecords??0)+' malformed records rejected, '+fmt(diagnostics?.invalidTimestamps??0)+' invalid/missing timestamps. Found '+fmt(s.events)+' track records and '+fmt(s.plays)+' qualifying plays (>30 seconds) in the Wrapped-style window (Jan 1–Nov 15, 2026). Artist scores are estimates (1.0 primary, 0.5 explicitly listed secondary artists). No files leave this browser.';renderCompare()}
 function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
 function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
-$('historyFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('fileStatus').textContent='Reading selected files locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){$('fileStatus').textContent='No history rows could be read. Choose Spotify streaming-history JSON files. '+r.errors.join(' · ');return}renderMine(r.rows,r.count);if(r.errors.length)$('fileStatus').textContent+=' Skipped: '+r.errors.join(' · ')});
-$('friendFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('friendStatus').textContent='Reading the second export locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){friend=null;$('friendStatus').textContent='Could not read a history array. '+r.errors.join(' · ');renderCompare();return}friend=summarize(r.rows);$('friendStatus').textContent='Processed '+r.count+' file(s) locally. '+fmt(friend.plays)+' eligible 2026 track records.';renderCompare()});
+$('historyFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('fileStatus').textContent='Reading selected files locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){$('fileStatus').textContent='No history rows could be read. Choose Spotify streaming-history JSON files. '+r.errors.join(' · ');return}renderMine(r.rows,r.count,r.diagnostics);if(r.errors.length)$('fileStatus').textContent+=' Skipped: '+r.errors.join(' · ')});
+$('friendFiles').addEventListener('change',async e=>{if(!e.target.files?.length)return;$('friendStatus').textContent='Reading the second export locally…';const r=await loadFiles(e.target.files);if(!r.rows.length){friend=null;$('friendStatus').textContent='Could not read a history array. '+r.errors.join(' · ');renderCompare();return}friend=summarize(r.rows);$('friendStatus').textContent='Processed '+r.count+' file(s) locally; '+fmt(r.diagnostics.acceptedRecords)+' records accepted, '+fmt(r.diagnostics.rejectedRecords)+' rejected. '+fmt(friend.plays)+' eligible 2026 plays.';renderCompare()});
 $('storyPrev').addEventListener('click',()=>{if(slideIndex>0){slideIndex--;renderSlide()}});$('storyNext').addEventListener('click',()=>{if(slideIndex<slides.length-1){slideIndex++;renderSlide()}});$('downloadCard').addEventListener('click',downloadCard);
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'&&slideIndex<slides.length-1){slideIndex++;renderSlide()}if(e.key==='ArrowLeft'&&slideIndex>0){slideIndex--;renderSlide()}});
 $('themeSelect').addEventListener('change',e=>applyTheme(e.target.value));
