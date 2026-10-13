@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css">
   <script src="analytics.js" defer></script>
   <script src="script.js" defer></script>
+  <script src="dashboard.js" defer></script>
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -86,6 +87,50 @@
         <div><h3>Top artists <span>(weighted estimate)</span></h3><ol id="lifetimeTopArtists" class="lifetime-list"><li>Upload history to begin.</li></ol></div>
         <div><h3>Top tracks</h3><ol id="lifetimeTopTracks" class="lifetime-list"><li>Upload history to begin.</li></ol></div>
       </div>
+    </section>
+
+    <nav class="analytics-nav" aria-label="Listening analytics navigation">
+      <a href="#lifetimeHeading">Overview</a><a href="#tracksPanel">Tracks</a><a href="#artistsPanel">Artists</a><a href="#albumsPanel">Albums</a><a href="#historyPanel">History</a><a href="#patternsPanel">Patterns</a>
+    </nav>
+    <section class="dashboard-intro" aria-labelledby="dashboardTitle">
+      <p class="eyebrow">DEEP LISTENING // LOCAL ARCHIVE</p><h2 id="dashboardTitle">The details behind the replay.</h2>
+      <p>Every dashboard view uses the imported history and the date range selected above. All calendar grouping uses UTC. Artist play counts are estimates, not Spotify's proprietary rankings.</p>
+    </section>
+    <section class="panel dashboard-panel" id="tracksPanel" aria-labelledby="tracksTitle">
+      <div class="dashboard-heading"><div><p class="eyebrow">01 / TRACK INDEX</p><h2 id="tracksTitle">Tracks</h2></div><label class="dashboard-control">Search tracks<input id="trackSearch" type="search" placeholder="Track or artist…" autocomplete="off"></label><label class="dashboard-control">Rank by<select id="trackSort"><option value="plays">Qualifying plays</option><option value="time">Recorded listening time</option><option value="title">Title A–Z</option></select></label></div>
+      <p class="dashboard-status" id="trackSummary" aria-live="polite">Import history to rank tracks.</p>
+      <div class="dashboard-table-wrap"><table><thead><tr><th scope="col">#</th><th scope="col">Track</th><th scope="col">Primary artist</th><th scope="col">Qualifying plays</th><th scope="col">Recorded time</th></tr></thead><tbody id="trackRows"><tr><td colspan="5">No history imported yet.</td></tr></tbody></table></div>
+      <div class="dashboard-footer"><span class="tiny">A qualifying play is strictly more than 30 seconds. Short events still add to recorded listening time.</span><button class="button button-quiet" id="tracksMore" type="button" hidden>SHOW MORE TRACKS</button></div>
+    </section>
+    <section class="panel dashboard-panel" id="artistsPanel" aria-labelledby="artistsTitle">
+      <div class="dashboard-heading"><div><p class="eyebrow">02 / ARTIST INDEX</p><h2 id="artistsTitle">Artists</h2></div><label class="dashboard-control">Search artists<input id="artistSearch" type="search" placeholder="Artist name…" autocomplete="off"></label><label class="dashboard-control">Rank by<select id="artistSort"><option value="plays">Estimated plays</option><option value="time">Recorded listening time</option><option value="title">Name A–Z</option></select></label></div>
+      <p class="dashboard-status" id="artistSummary" aria-live="polite">Import history to rank artists.</p>
+      <p class="tiny">Primary artist = 1.0 estimated play point; explicitly listed secondary artists = 0.5. Listening time is credited to each listed artist, so collaborator totals can overlap.</p>
+      <div class="dashboard-table-wrap"><table><thead><tr><th scope="col">#</th><th scope="col">Artist</th><th scope="col">Estimated play points</th><th scope="col">Recorded time*</th><th scope="col">Tracks</th></tr></thead><tbody id="artistRows"><tr><td colspan="5">No history imported yet.</td></tr></tbody></table></div>
+      <div class="dashboard-footer"><span class="tiny">*Artist duration totals should not be added together. Rankings are estimates, not Spotify's exact formulas.</span><button class="button button-quiet" id="artistsMore" type="button" hidden>SHOW MORE ARTISTS</button></div>
+    </section>
+    <section class="panel dashboard-panel" id="albumsPanel" aria-labelledby="albumsTitle">
+      <div class="dashboard-heading"><div><p class="eyebrow">03 / ALBUM INDEX</p><h2 id="albumsTitle">Albums</h2></div><label class="dashboard-control">Search albums<input id="albumSearch" type="search" placeholder="Album or artist…" autocomplete="off"></label><label class="dashboard-control">Rank by<select id="albumSort"><option value="plays">Qualifying plays</option><option value="time">Recorded listening time</option><option value="title">Album A–Z</option></select></label></div>
+      <p class="dashboard-status" id="albumSummary" aria-live="polite">Import history to rank albums.</p>
+      <p class="tiny">Only records with album names supplied by the export are grouped. Artwork, release dates and genres are not inferred.</p>
+      <div class="dashboard-table-wrap"><table><thead><tr><th scope="col">#</th><th scope="col">Album</th><th scope="col">Artist</th><th scope="col">Qualifying plays</th><th scope="col">Recorded time</th></tr></thead><tbody id="albumRows"><tr><td colspan="5">No history imported yet.</td></tr></tbody></table></div>
+      <div class="dashboard-footer"><span class="tiny">Albums are grouped by album title + primary artist.</span><button class="button button-quiet" id="albumsMore" type="button" hidden>SHOW MORE ALBUMS</button></div>
+    </section>
+    <section class="panel dashboard-panel" id="historyPanel" aria-labelledby="historyTitle">
+      <div class="dashboard-heading"><div><p class="eyebrow">04 / EVENT LOG</p><h2 id="historyTitle">Listening history</h2></div><label class="dashboard-control">Search history<input id="historySearch" type="search" placeholder="Track, artist or album…" autocomplete="off"></label></div>
+      <p class="dashboard-status" id="historySummary" aria-live="polite">Import history to inspect events.</p>
+      <div class="dashboard-table-wrap"><table><thead><tr><th scope="col">Timestamp (UTC)</th><th scope="col">Track</th><th scope="col">Artist</th><th scope="col">Album</th><th scope="col">Recorded duration</th></tr></thead><tbody id="historyRows"><tr><td colspan="5">No history imported yet.</td></tr></tbody></table></div>
+      <div class="dashboard-footer"><span class="tiny">Newest events first; records without valid timestamps appear last in All time.</span><button class="button button-quiet" id="historyMore" type="button" hidden>LOAD MORE EVENTS</button></div>
+    </section>
+    <section class="panel dashboard-panel" id="patternsPanel" aria-labelledby="patternsTitle">
+      <div class="dashboard-heading"><div><p class="eyebrow">05 / TEMPORAL SIGNAL</p><h2 id="patternsTitle">Listening patterns</h2></div><span class="timezone-note">UTC · 24-hour clock</span></div>
+      <p class="dashboard-status" id="patternsSummary" aria-live="polite">Import history to explore patterns.</p>
+      <div class="pattern-grid">
+        <section aria-labelledby="dailyPatternTitle"><h3 id="dailyPatternTitle">Busiest UTC dates</h3><div id="dailyPattern" class="pattern-bars"><p class="empty-row">No timestamped history yet.</p></div></section>
+        <section aria-labelledby="monthlyPatternTitle"><h3 id="monthlyPatternTitle">Listening by month</h3><div id="monthlyPattern" class="pattern-bars"><p class="empty-row">No timestamped history yet.</p></div></section>
+        <section aria-labelledby="hourlyPatternTitle"><h3 id="hourlyPatternTitle">Listening by hour</h3><div id="hourlyPattern" class="pattern-bars"><p class="empty-row">No timestamped history yet.</p></div></section>
+      </div>
+      <p class="tiny">Bars represent recorded duration only. A chart is marked unavailable when the selected range contains no valid timestamps or no positive recorded durations.</p>
     </section>
 
     <section class="section-head">
