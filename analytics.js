@@ -31,11 +31,20 @@
   }
   function parseTimestamp(value) {
     if (value == null || value === '') return null;
+    if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.getTime() : null;
     let date;
-    if (typeof value === 'number' || (typeof value === 'string' && /^\d{10,13}$/.test(value.trim()))) {
-      const n = Number(value);
-      date = new Date(n > 0 && n < 1e12 ? n * 1000 : n);
-    } else date = new Date(value);
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) return null;
+      date = new Date(value > 0 && value < 1e12 ? value * 1000 : value);
+    } else if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text) return null;
+      if (/^\d+$/.test(text)) {
+        if (!/^\d{10,13}$/.test(text)) return null;
+        const n = Number(text);
+        date = new Date(n > 0 && n < 1e12 ? n * 1000 : n);
+      } else date = new Date(text);
+    } else return null;
     return Number.isFinite(date.getTime()) ? date.getTime() : null;
   }
   function stringList(value) {
