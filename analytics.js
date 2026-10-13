@@ -310,9 +310,6 @@
     }
     const days=[...summary.days.entries()].filter(([,ms])=>ms>0).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
     if(days.length) add({ type:'peak-day', eyebrow:'PEAK LISTENING DAY', title:days[0][0] + ' UTC', number:fmt(Math.floor(days[0][1]/60000)), body:'Your highest recorded listening-duration date in this range. This uses UTC calendar days and recorded duration, not play count.' });
-    const streak=listeningStreaks(input,{range});
-    if(streak.longest.days>0) add({ type:'streak', eyebrow:'THE STREAK FILE', number:fmt(streak.longest.days), title:'consecutive active UTC days.',
-      body:'Longest streak: ' + streak.longest.start + ' through ' + streak.longest.end + '. An active day has at least one eligible record with a valid UTC timestamp and positive recorded duration; missing dates break the streak.' });
     if(rankedTracks.length && summary.plays>0 && rankedTracks[0].plays>=2) {
       const top=rankedTracks[0],share=top.plays/summary.plays;
       add({ type:'repeat', eyebrow:'BIGGEST REPEAT', title:top.name, body:top.artist + ' appeared in ' + fmt(top.plays) + ' qualifying plays (' + fmt(share*100) + '% of qualifying plays in this range). This is a track-group count, not a unique-session estimate.' });
@@ -321,16 +318,12 @@
     let identity=null;
     if(summary.plays>=10 && topShare>=0.2) identity={title:'The Loop Architect',basis:'Rule: at least 10 qualifying plays, with one track group accounting for 20% or more of qualifying plays.'};
     else if(summary.plays>=10 && trackCount>=20 && topShare<0.1) identity={title:'The Deep-Catalog Drifter',basis:'Rule: at least 10 qualifying plays, 20 or more qualifying track groups, and the top track below 10% of qualifying plays.'};
-    else if(summary.plays>=10 && streak.longest.days>=5) identity={title:'The Steady Signal',basis:'Rule: at least 10 qualifying plays and a longest streak of at least 5 consecutive active UTC dates.'};
     if(identity) add({ type:'identity', eyebrow:'LISTENING IDENTITY', title:identity.title, body:identity.basis+' This label describes only the imported records in this date range; it is not a psychological or genre claim.' });
-    const discoveries=firstObserved(input,{range});
-    if(discoveries.tracks.length) add({ type:'first-observed', eyebrow:'ARCHIVE DISCOVERY', title:discoveries.tracks[0].name, body:'Earliest observed occurrence in this imported history and selected date range: ' + discoveries.tracks[0].date + ' UTC. Track groups are identified by track name + primary artist. This is not a claim about your lifetime first listen.' });
     const finalBits=[];
     if(summary.total>0) finalBits.push(fmt(Math.floor(summary.total/60000))+' recorded minutes');
     finalBits.push(fmt(summary.plays)+' qualifying plays');
     if(rankedTracks[0]) finalBits.push('top track: '+rankedTracks[0].name+' — '+rankedTracks[0].artist);
     if(rankedArtists[0]) finalBits.push('top estimated artist points: '+rankedArtists[0].name+' ('+fmt(rankedArtists[0].plays)+')');
-    if(streak.longest.days>0) finalBits.push('longest streak: '+fmt(streak.longest.days)+' UTC day(s)');
     add({ type:'recap', eyebrow:'THE FINAL RECEIPT', title:'The strongest verified signals.', list:finalBits, body:'Every figure comes from the imported records and selected date range. ' + caveat });
     return { valid:true, empty:false, range, summary, stories };
   }
