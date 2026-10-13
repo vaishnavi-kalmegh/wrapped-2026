@@ -114,14 +114,15 @@
   }
   function resolveArtwork(items,type){
     if(!$('artworkLookupEnabled')||!$('artworkLookupEnabled').checked){items.forEach(item=>{delete item.imageUrl;delete item.artworkUrl;});return;}
-    const token=++requestToken[type];
+    const token=requestToken[type];
     items.slice(0,5).forEach(item=>{
       const cacheKey=(type==='artist'?'artist:':'track:')+(type==='artist'?item.name:item.name+'|'+item.artist);
       if(artworkCache.has(cacheKey)){item[type==='artist'?'imageUrl':'artworkUrl']=artworkCache.get(cacheKey);return;}
       const task=type==='artist'?artistImage(item.name):trackArtwork(item.name,item.artist);
       task.then(url=>{
-        if(!url)return;artworkCache.set(cacheKey,url);
-        if(token!==requestToken[type]||!$('artworkLookupEnabled')?.checked)return;
+        if(token!==requestToken[type])return;
+        artworkCache.set(cacheKey,url||null);
+        if(!url||!$('artworkLookupEnabled')?.checked)return;
         item[type==='artist'?'imageUrl':'artworkUrl']=url;
         const limit=type==='artist'?artistLimit:trackLimit;
         const visible=(type==='artist'?summary?.artists:summary?.tracks)||[];
