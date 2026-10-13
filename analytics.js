@@ -271,11 +271,74 @@
     const ranked=[...totals.values()].sort((a,b)=>b.ms-a.ms||a.name.localeCompare(b.name)),topMs=ranked.slice(0,5).reduce((sum,a)=>sum+a.ms,0);
     return {totalPrimaryArtistMs:total,artists:ranked.map(a=>({...a,share:total?a.ms/total:0})),topArtistShare:total?(ranked[0]?.ms||0)/total:0,topFiveShare:total?topMs/total:0};
   }
+  function buildStory(input, options) {
+    const opts = options || {}, range = opts.range || dateRange('allTime');
+    const summary = summarize(input, { range, includeUnqualifiedGroups: true });
+    if (!summary.valid) return { valid: false, error: summary.error, stories: [] };
+    const records = summary.records || [];
+    const incomplete = opts.incomplete !== false;
+    const caveat = incomplete ? 'Based on the history files selected; the archive may be incomplete.' : 'Based on the history records supplied.';
+    const stories = [];
+    const add = story => stories.push({ ...story, rangeLabel: range.label || 'Selected date range', caveat });
+    const fmt = n => new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(n);
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (!records.length) {
+      add({ type:'empty', eyebrow:'NO MATCHING RECORDS', title:'No story without receipts.', body:'No eligible music records were found in this date range. Check the selected range and imported files.' });
+      return { valid:true, empty:true, range, summary, stories };
+    }
+    add({ type:'intro', eyebrow:'YOUR LISTENING STORY', title:'Your recap, from the receipts.', body:(range.label || 'Selected date range') + '. Calculated from ' + fmt(records.length) + ' eligible music records in the imported files.' });
+    if (summary.total > 0) add({
+      type:'duration', eyebrow:'TIME IN THE MIX', number:fmt(Math.floor(summary.total / 60000)), title:'minutes recorded.',
+      body:'Recorded listening duration includes positive recorded durations from short events too. A qualifying play is strictly more than 30,000 ms.'
+    });
+    const rankedTracks = summary.tracks.filter(t => t.plays > 0);
+    const rankedArtists = summary.artists.filter(a => a.plays > 0);
+    if (rankedTracks.length) add({
+      type:'tracks', eyebrow:'THE TRACK ROTATION', title:'The tracks you returned to.',
+      list:rankedTracks.slice(0,5).map((t,i)=>(i+1)+'. ' + t.name + ' — ' + t.artist + ' · ' + fmt(t.plays) + ' qualifying plays'),
+      body:'Track groups use track name + primary artist. Only events over 30,000 ms count as qualifying plays.'
+    });
+    if (rankedArtists.length) add({
+      type:'artists', eyebrow:'ARTIST ROLL CALL', number:fmt(summary.artistNames.size), title:'artist names with qualifying plays.',
+      list:rankedArtists.slice(0,5).map((a,i)=>(i+1)+'. ' + a.name + ' — ' + fmt(a.plays) + ' estimated play points'),
+      body:'Estimated points: primary artist = 1.0, explicitly listed secondary artist = 0.5 per qualifying event. Collaborator durations overlap and are not unique listening time.'
+    });
+    const months = [...summary.monthsByYear.entries()].filter(([key,ms]) => ms > 0 && (!range.start || key >= new Date(range.start).toISOString().slice(0,7)) && (!range.end || key <= new Date(range.end).toISOString().slice(0,7))).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if (months.length) {
+      const key=months[0][0],parts=key.split('-').map(Number);
+      add({ type:'peak-month', eyebrow:'PEAK LISTENING MONTH', title:monthNames[parts[1]-1] + ' ' + parts[0], number:fmt(Math.floor(months[0][1]/60000)), body:'Your highest recorded listening-duration month in this range, grouped by UTC calendar month.' });
+    }
+    const days=[...summary.days.entries()].filter(([,ms])=>ms>0).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if(days.length) add({ type:'peak-day', eyebrow:'PEAK LISTENING DAY', title:days[0][0] + ' UTC', number:fmt(Math.floor(days[0][1]/60000)), body:'Your highest recorded listening-duration date in this range. This uses UTC calendar days and recorded duration, not play count.' });
+    const streak=listeningStreaks(input,{range});
+    if(streak.longest.days>0) add({ type:'streak', eyebrow:'THE STREAK FILE', number:fmt(streak.longest.days), title:'consecutive active UTC days.',
+      body:'Longest streak: ' + streak.longest.start + ' through ' + streak.longest.end + '. An active day has at least one eligible record with a valid UTC timestamp and positive recorded duration; missing dates break the streak.' });
+    if(rankedTracks.length && summary.plays>0 && rankedTracks[0].plays>=2) {
+      const top=rankedTracks[0],share=top.plays/summary.plays;
+      add({ type:'repeat', eyebrow:'BIGGEST REPEAT', title:top.name, body:top.artist + ' appeared in ' + fmt(top.plays) + ' qualifying plays (' + fmt(share*100) + '% of qualifying plays in this range). This is a track-group count, not a unique-session estimate.' });
+    }
+    const trackCount=rankedTracks.length,topShare=summary.plays&&rankedTracks[0]?rankedTracks[0].plays/summary.plays:0;
+    let identity=null;
+    if(summary.plays>=10 && topShare>=0.2) identity={title:'The Loop Architect',basis:'Rule: at least 10 qualifying plays, with one track group accounting for 20% or more of qualifying plays.'};
+    else if(summary.plays>=10 && trackCount>=20 && topShare<0.1) identity={title:'The Deep-Catalog Drifter',basis:'Rule: at least 10 qualifying plays, 20 or more qualifying track groups, and the top track below 10% of qualifying plays.'};
+    else if(summary.plays>=10 && streak.longest.days>=5) identity={title:'The Steady Signal',basis:'Rule: at least 10 qualifying plays and a longest streak of at least 5 consecutive active UTC dates.'};
+    if(identity) add({ type:'identity', eyebrow:'LISTENING IDENTITY', title:identity.title, body:identity.basis+' This label describes only the imported records in this date range; it is not a psychological or genre claim.' });
+    const discoveries=firstObserved(input,{range});
+    if(discoveries.tracks.length) add({ type:'first-observed', eyebrow:'ARCHIVE DISCOVERY', title:discoveries.tracks[0].name, body:'Earliest observed occurrence in this imported history and selected date range: ' + discoveries.tracks[0].date + ' UTC, by ' + (summary.records.find(r=>r.track===discoveries.tracks[0].name)?.primaryArtist || 'an artist not resolved here') + '. This is not a claim about your lifetime first listen.' });
+    const finalBits=[];
+    if(summary.total>0) finalBits.push(fmt(Math.floor(summary.total/60000))+' recorded minutes');
+    finalBits.push(fmt(summary.plays)+' qualifying plays');
+    if(rankedTracks[0]) finalBits.push('top track: '+rankedTracks[0].name+' — '+rankedTracks[0].artist);
+    if(rankedArtists[0]) finalBits.push('top estimated artist points: '+rankedArtists[0].name+' ('+fmt(rankedArtists[0].plays)+')');
+    if(streak.longest.days>0) finalBits.push('longest streak: '+fmt(streak.longest.days)+' UTC day(s)');
+    add({ type:'recap', eyebrow:'THE FINAL RECEIPT', title:'The strongest verified signals.', list:finalBits, body:'Every figure comes from the imported records and selected date range. ' + caveat });
+    return { valid:true, empty:false, range, summary, stories };
+  }
   function comparePeriods(input, rangeA, rangeB) {
     const a=summarize(input,{range:rangeA,includeUnqualifiedGroups:true}),b=summarize(input,{range:rangeB,includeUnqualifiedGroups:true});
     if(!a.valid||!b.valid)return {valid:false,error:a.error||b.error};
     const metrics=[['listeningMs',a.total,b.total],['qualifyingPlays',a.plays,b.plays],['activeDays',a.activeDays,b.activeDays],['trackGroups',a.tracks.length,b.tracks.length],['artistGroups',a.artists.length,b.artists.length]];
     return {valid:true,a:{range:a.range,summary:a},b:{range:b.range,summary:b},metrics:metrics.map(([key,previous,current])=>({key,a:previous,b:current,delta:current-previous,changePercent:previous===0?null:(current-previous)/previous*100}))};
   }
-  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents, milestoneBadges, listeningStreaks, firstObserved, artistConcentration, comparePeriods };
+  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents, milestoneBadges, listeningStreaks, firstObserved, artistConcentration, comparePeriods, buildStory };
 });
