@@ -166,3 +166,39 @@ html[data-theme="futuristic"] .heat-cell[data-level="4"]{background:#353e48}
   .story-slide { padding: 20px; }
   .story-controls .button { letter-spacing: 0; }
 }
+
+/* Phase 1 lifetime analytics overview */
+.lifetime-panel{padding:24px}
+.lifetime-controls{display:flex;align-items:end;gap:14px;flex-wrap:wrap}
+.lifetime-controls>div:first-child{min-width:180px}
+.lifetime-controls select,.custom-range-fields input{width:100%;min-height:43px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel);color:var(--ink);font:12px 'DM Mono',monospace}
+.custom-range-fields{display:flex;gap:10px;flex:1;min-width:min(100%,300px)}
+.custom-range-fields>div{flex:1;min-width:0}
+.custom-range-fields[hidden]{display:none}
+.lifetime-controls .button{min-height:43px}
+.lifetime-status{margin:15px 0 18px}
+.lifetime-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.lifetime-metrics article{display:flex;flex-direction:column;gap:8px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--bg)}
+.lifetime-metrics strong{font-size:clamp(24px,3.5vw,38px);line-height:1;letter-spacing:-.06em;overflow-wrap:anywhere}
+.lifetime-metrics .stat-foot{margin-top:auto;color:var(--muted);font-size:9px;line-height:1.5}
+.lifetime-lists{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.lifetime-lists>div{min-width:0;border-top:1px solid var(--line);padding-top:15px}
+.lifetime-lists h3{margin:0 0 10px;font-size:17px;letter-spacing:-.03em}
+.lifetime-lists h3 span{font-size:11px;font-weight:400;color:var(--muted)}
+.lifetime-list{margin:0;padding-left:25px}
+.lifetime-list li{padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;line-height:1.45;overflow-wrap:anywhere}
+.lifetime-list li:last-child{border-bottom:0}
+.lifetime-list small{display:block;color:var(--muted);font:10px/1.5 'DM Mono',monospace;margin-top:3px}
+html[data-theme="y2k"] .lifetime-metrics article{background:linear-gradient(145deg,#fffaff,#f9e8ff);border-color:#eabce8}
+html[data-theme="futuristic"] .lifetime-metrics article{background:linear-gradient(135deg,#fafbfc,#e0e4e8);border-color:#aeb6bf}
+@media(max-width:760px){
+ .lifetime-panel{padding:16px}
+ .lifetime-controls{align-items:stretch;flex-direction:column;gap:10px}
+ .lifetime-controls>div:first-child{min-width:0}
+ .custom-range-fields{min-width:0;width:100%}
+ .lifetime-controls .button{width:100%;justify-content:center}
+ .lifetime-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .lifetime-metrics article{padding:13px}
+ .lifetime-metrics strong{font-size:clamp(25px,7vw,34px)}
+ .lifetime-lists{grid-template-columns:1fr;gap:12px}
+}
