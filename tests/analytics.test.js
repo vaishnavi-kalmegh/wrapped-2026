@@ -351,7 +351,7 @@ test('Story Mode handles one qualifying track and one artist without inventing r
   const artists=x.stories.find(s=>s.type==='artists');
   assert.equal(x.summary.plays,1);
   assert.equal(tracks.list.length,1);
-  assert.match(tracks.list[0],/Solo Track — Solo Artist · 1 qualifying plays/);
+  assert.match(tracks.list[0],/Solo Track — Solo Artist · 1 qualifying play/);
   assert.match(artists.list[0],/Solo Artist — 1 estimated play points/);
   assert.equal(x.stories.some(s=>s.type==='repeat'),false);
   assert.equal(x.stories.some(s=>s.type==='identity'),false);
