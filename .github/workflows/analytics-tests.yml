@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'analytics.js'
+      - 'script.js'
       - 'tests/**'
       - '.github/workflows/analytics-tests.yml'
   pull_request:
@@ -20,4 +21,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: node --check analytics.js
+      - run: node --check script.js
       - run: node --test tests/analytics.test.js
