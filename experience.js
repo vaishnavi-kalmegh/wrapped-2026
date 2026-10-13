@@ -108,7 +108,8 @@
   function renderRanks(type){
     const artist=type==='artist',items=artist?(summary?summary.artists:[]):(summary?summary.tracks:[]),limit=artist?artistLimit:trackLimit,container=$(artist?'artistCards':'trackCards'),more=$(artist?'artistsLoadMore':'tracksLoadMore'),status=$(artist?'artistCardsStatus':'trackCardsStatus');
     const ranked=items.filter(x=>x.plays>0),shown=visibleRankings(items,limit);
-    if(!rows.length||!ranked.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>Waiting for your data</h3><p>Import a Spotify history JSON file to rank this section.</p></div>';more.hidden=true;status.textContent='No qualifying results in this range.';return;}
+    if(!rows.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>Waiting for your data</h3><p>Import a Spotify history JSON file to rank this section.</p></div>';more.hidden=true;collapse.hidden=true;status.textContent='Import history to calculate rankings.';return;}
+    if(!ranked.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>No qualifying results in this window.</h3><p>There are no track or artist groups with plays over 30 seconds in this range. Try another date window.</p></div>';more.hidden=true;collapse.hidden=true;status.textContent='No qualifying results in this range.';return;}
     container.innerHTML=shown.map((x,i)=>rankingCard(x,i+1,type)).join('');
     status.textContent='Showing '+shown.length+' of '+Math.min(50,ranked.length)+' available ranked '+(artist?'artist':'track')+' groups. Rankings use the shared analytics engine.';
     more.hidden=shown.length>=Math.min(50,ranked.length);
