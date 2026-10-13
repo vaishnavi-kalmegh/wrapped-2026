@@ -41,7 +41,7 @@
     const tbody = $(tbodyId), q = query.trim().toLocaleLowerCase();
     const filtered = sorted(items, sorter, primary).filter(item => columns.search(item).toLocaleLowerCase().includes(q));
     const limit = visible[kind];
-    if (!sourceRows.length) { emptyRow(tbody, columns.count, 'Import history to begin.'); return { filtered, shown: 0 }; }
+    if (!sourceRows.length) { emptyRow(tbody, columns.count, 'Import history to begin.'); const more=$(kind+'More'); if(more) more.hidden=true; return { filtered, shown: 0 }; }
     if (!filtered.length) { emptyRow(tbody, columns.count, q ? 'No matches. Try a shorter search.' : 'No qualifying records in this range.'); const more=$(kind+'More');if(more)more.hidden=true;return { filtered, shown: 0 }; }
     tbody.replaceChildren();
     filtered.slice(0,limit).forEach((item,index)=>{const tr=document.createElement('tr');cell(tr,index+1);columns.render(tr,item);tbody.append(tr);});
