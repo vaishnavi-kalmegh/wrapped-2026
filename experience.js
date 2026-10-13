@@ -242,13 +242,13 @@
     try{
       const canvas=root.document.createElement('canvas');canvas.width=1080;canvas.height=1920;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas is unavailable');
       const style=getComputedStyle(root.document.documentElement),bg=style.getPropertyValue('--bg').trim()||'#101010',ink=style.getPropertyValue('--ink').trim()||'#fff',accent=style.getPropertyValue('--lime').trim()||'#1ed760',alt=style.getPropertyValue('--pink').trim()||'#ff4fa0';
-      ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1920);ctx.fillStyle=accent;ctx.fillRect(70,72,940,12);ctx.fillStyle=ink;ctx.font='700 26px monospace';ctx.fillText('WRAPPED.exe // LISTENING LORE',72,132);
+      ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1920);const glow=ctx.createRadialGradient(900,220,20,800,330,850);glow.addColorStop(0,alt);glow.addColorStop(1,bg);ctx.globalAlpha=.24;ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1920);ctx.globalAlpha=1;ctx.fillStyle=accent;ctx.fillRect(70,72,940,12);ctx.fillStyle=ink;ctx.font='700 26px monospace';ctx.fillText('WRAPPED.exe // LISTENING LORE',72,132);
       ctx.fillStyle=alt;ctx.font='700 27px monospace';ctx.fillText(safe(slide.eyebrow).toUpperCase().slice(0,42),72,230);
-      ctx.fillStyle=ink;ctx.font='700 82px sans-serif';let y=wrapText(ctx,slide.title,72,370,900,94,4)+55;
+      ctx.fillStyle=ink;ctx.font='700 70px sans-serif';let y=wrapText(ctx,slide.title,72,350,900,80,3)+45;
       ctx.fillStyle=accent;ctx.fillRect(72,y,140,7);y+=70;
-      ctx.fillStyle=ink;ctx.font='36px sans-serif';y=wrapText(ctx,slide.body||'',72,y,900,52,7)+35;
-      if(slide.items&&slide.items.length){ctx.font='600 31px sans-serif';for(const x of slide.items.slice(0,5)){ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);const art=await loadCanvasImage(x.imageUrl);const textX=art?222:150;if(art){ctx.save();ctx.beginPath();ctx.rect(145,y-34,58,58);ctx.clip();ctx.drawImage(art,145,y-34,58,58);ctx.restore();}ctx.fillStyle=ink;y=wrapText(ctx,x.name,textX,y,art?650:720,40,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,textX,y,art?650:720,32,1);}ctx.fillStyle=accent;ctx.font='25px monospace';y=wrapText(ctx,x.value,textX,y,760,31,1)+30;ctx.font='600 31px sans-serif';}}
-      if(slide.detail){ctx.fillStyle='#b8b8b8';ctx.font='24px sans-serif';y=wrapText(ctx,slide.detail,72,Math.min(y+25,1480),900,34,4);}
+      ctx.fillStyle=ink;ctx.font='30px sans-serif';y=wrapText(ctx,slide.body||'',72,y,900,40,3)+25;
+      if(slide.items&&slide.items.length){ctx.font='600 26px sans-serif';for(const x of slide.items.slice(0,5)){ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);const art=await loadCanvasImage(x.imageUrl);const textX=art?222:150;if(art){ctx.save();ctx.beginPath();ctx.rect(145,y-28,58,58);ctx.clip();ctx.drawImage(art,145,y-28,58,58);ctx.restore();}ctx.fillStyle=ink;y=wrapText(ctx,x.name,textX,y,art?650:720,32,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,textX,y,art?650:720,25,1);}ctx.fillStyle=accent;ctx.font='22px monospace';y=wrapText(ctx,x.value,textX,y,760,28,1)+20;ctx.font='600 26px sans-serif';}}
+      if(slide.detail&&y<1630){ctx.fillStyle='#b8b8b8';ctx.font='22px sans-serif';wrapText(ctx,slide.detail,72,Math.min(y+20,1620),900,30,2);}
       ctx.fillStyle='#b8b8b8';ctx.font='22px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',72,1740,900,32,2);
       ctx.fillStyle=accent;ctx.fillRect(72,1840,936,4);ctx.fillStyle=ink;ctx.font='22px monospace';ctx.fillText((range.label||'Selected range').toUpperCase(),72,1880);
       const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG creation failed')),'image/png'));
