@@ -114,7 +114,7 @@
     const token=++requestToken;
     items.slice(0,5).forEach(item=>{
       const cacheKey=(type==='artist'?'artist:':'track:')+(type==='artist'?item.name:item.name+'|'+item.artist);
-      if(artworkCache.has(cacheKey)){item[type==='artist'?'imageUrl':'artworkUrl']=artworkCache.get(cacheKey];return;}
+      if(artworkCache.has(cacheKey)){item[type==='artist'?'imageUrl':'artworkUrl']=artworkCache.get(cacheKey);return;}
       const task=type==='artist'?artistImage(item.name):trackArtwork(item.name,item.artist);
       task.then(url=>{
         if(!url)return;artworkCache.set(cacheKey,url);
