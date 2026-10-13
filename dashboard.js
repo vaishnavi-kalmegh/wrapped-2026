@@ -52,7 +52,7 @@
   function renderTracks() {
     const s=summary,items=s?s.tracks:[];
     const result=pagedTable('tracks',items,'trackRows',{count:5,search:x=>[x.name,x.artist,(x.albumNames||[]).join(' ')].join(' '),render:(tr,x)=>{cell(tr,x.name);cell(tr,x.artist);cell(tr,number(x.plays));cell(tr,time(x.ms));}},$('trackSearch').value,$('trackSort').value,'name');
-    $('trackSummary').textContent=s?number(result.filtered.length)+' ranked tracks · '+number(result.shown)+' shown · '+s.range.label+'.':'Choose valid custom dates to calculate tracks.';
+    $('trackSummary').textContent=s?number(result.filtered.length)+' track groups · '+number(result.shown)+' shown · '+s.range.label+'.':'Choose valid custom dates to calculate tracks.';
   }
   function renderArtists() {
     const s=summary,items=s?s.artists:[];
@@ -70,12 +70,12 @@
         detail.append(pane);tr.after(detail);button.setAttribute('aria-expanded','true');button.textContent='Hide tracks';
       });td.append(button);tr.append(td);
     }},$('artistSearch').value,$('artistSort').value,'name');
-    $('artistSummary').textContent=s?number(result.filtered.length)+' artists with qualifying events · '+number(result.shown)+' shown · weighted play estimates.':'Choose valid custom dates to calculate artists.';
+    $('artistSummary').textContent=s?number(result.filtered.length)+' artist groups in selected history · '+number(result.shown)+' shown · weighted play estimates.':'Choose valid custom dates to calculate artists.';
   }
   function renderAlbums() {
     const s=summary,items=s?s.albums:[];
     const result=pagedTable('albums',items,'albumRows',{count:5,search:x=>[x.album,x.artist].join(' '),render:(tr,x)=>{cell(tr,x.album);cell(tr,x.artist);cell(tr,number(x.plays));cell(tr,time(x.ms));}},$('albumSearch').value,$('albumSort').value,'album');
-    $('albumSummary').textContent=s?number(result.filtered.length)+' album + artist groups with qualifying events · '+number(result.shown)+' shown. Missing album metadata is not guessed.':'Choose valid custom dates to calculate albums.';
+    $('albumSummary').textContent=s?number(result.filtered.length)+' album + artist groups in selected history · '+number(result.shown)+' shown. Missing album metadata is not guessed.':'Choose valid custom dates to calculate albums.';
   }
   function renderHistory() {
     const tbody=$('historyRows'),q=$('historySearch').value.trim().toLocaleLowerCase(),events=summary?WrappedAnalytics.sortEvents(summary.records):[];
