@@ -274,3 +274,23 @@ html[data-theme="futuristic"] .pattern-bar-fill{background:linear-gradient(90deg
  .dashboard-table-wrap table{min-width:600px}
 }
 :focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+
+/* Phase 3 evidence-based insights */
+.insight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 22px}
+.insight-card{display:flex;flex-direction:column;gap:8px;min-width:0;border:1px solid var(--line);border-radius:8px;padding:15px;background:var(--bg)}
+.insight-label{margin:0;color:var(--muted);font:10px 'DM Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+.insight-card strong{font-size:clamp(19px,2.4vw,28px);line-height:1.15;overflow-wrap:anywhere}
+.insight-card span{font:10px/1.55 'DM Mono',monospace;color:var(--muted)}
+.insight-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.insight-columns>section{border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.insight-columns h3{font-size:17px;margin:0 0 12px}
+.insight-copy{font-size:12px;line-height:1.7;color:var(--muted);overflow-wrap:anywhere}
+.insight-copy p{margin:8px 0}
+.insight-copy ul{margin:8px 0;padding-left:18px}
+.insight-copy li{padding:3px 0}
+.insight-diagnostics{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:8px}
+.insight-diagnostics summary{cursor:pointer;font:11px 'DM Mono',monospace}
+.insight-panel>.tiny{margin-top:16px;color:var(--muted)}
+html[data-theme="y2k"] .insight-card,html[data-theme="y2k"] .insight-columns>section{border-color:#e7b6ef;background:#fffaff}
+html[data-theme="futuristic"] .insight-card,html[data-theme="futuristic"] .insight-columns>section{border-color:#aeb6bf;background:linear-gradient(135deg,#fafbfc,#e0e4e8)}
+@media(max-width:760px){.insight-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.insight-card{padding:12px}.insight-columns{grid-template-columns:1fr}.insight-columns>section{padding:14px}}
