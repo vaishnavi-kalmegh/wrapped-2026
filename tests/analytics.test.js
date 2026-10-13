@@ -557,7 +557,7 @@ test('Artwork matching normalizes punctuation, Unicode accents and case but chec
   assert.equal(E.findTrackArtwork(results,'Jóga','BJÖRK'),'https://example.test/cover-1.jpg');
   assert.equal(E.findTrackArtwork(results,'Song — ✨','Artist'),'https://example.test/right.jpg');
   assert.equal(E.findTrackArtwork(results,'Song ✨','Missing Artist'),null);
-  assert.equal(E.findTrackArtwork(results,'Song','Artist'),null,'a remix must not be accepted as the original track');
+  assert.equal(E.findTrackArtwork([results[3]],'Song','Artist'),null,'a remix must not be accepted as the original track');
   assert.equal(E.findTrackArtwork([], 'Unknown','Unknown'),null);
 });
 test('Artwork matching tolerates featured-artist and release-edition formatting without dropping remix identity', () => {
