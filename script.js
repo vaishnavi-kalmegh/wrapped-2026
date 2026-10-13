@@ -88,7 +88,7 @@ async function loadFiles(files){
  return{rows:parsed.rows,errors,count:files.length,diagnostics:parsed.diagnostics};
 }
 function summarize(rows){
- const range=WrappedAnalytics.dateRange('custom',{start:'2026-01-01',end:'2026-11-15'});
+ const range={valid:true,kind:'wrapped2026',start:Date.UTC(YEAR,0,1),end:WRAPPED_CUTOFF,label:'2026 Wrapped (Jan 1–Nov 15 UTC)'};
  return WrappedAnalytics.summarize(rows,{range,requireTrackAndArtistForDuration:true});
 }
 function renderRank(id,arr,kind){const el=$(id);el.replaceChildren();if(!arr.length){const li=document.createElement('li');li.className='empty-row';li.textContent='No matching 2026 records found.';el.append(li);return}
