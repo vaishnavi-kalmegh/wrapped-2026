@@ -82,7 +82,7 @@
     slides.push({type:'closing',eyebrow:'THE FINAL RECEIPT',title:'All signal. No invented stats.',body:'Based on imported history and the selected range: '+(range.label||'All time')+'.',detail:'This archive may be incomplete. No raw listening-history records are included in story exports.'});
     return slides;
   }
-  let rows=[],diagnostics=null,range=null,summary=null,slideList=[],slideIndex=0,trackLimit=10,artistLimit=10,requestToken=0,artworkCache=new Map(),activeDayTip=null;
+  let rows=[],diagnostics=null,range=null,summary=null,slideList=[],slideIndex=0,trackLimit=10,artistLimit=10,requestToken={artist:0,track:0},artworkCache=new Map();
   function getRange(){
     const mode=$('experienceRange')?.value||'allTime';
     const start=$('experienceStart')?.value||'',end=$('experienceEnd')?.value||'';
@@ -111,14 +111,15 @@
     resolveArtwork(shown.slice(0,5),type);
   }
   function resolveArtwork(items,type){
-    const token=++requestToken;
+    if(!$('artworkLookupEnabled')||!$('artworkLookupEnabled').checked){items.forEach(item=>{delete item.imageUrl;delete item.artworkUrl;});return;}
+    const token=++requestToken[type];
     items.slice(0,5).forEach(item=>{
       const cacheKey=(type==='artist'?'artist:':'track:')+(type==='artist'?item.name:item.name+'|'+item.artist);
       if(artworkCache.has(cacheKey)){item[type==='artist'?'imageUrl':'artworkUrl']=artworkCache.get(cacheKey);return;}
       const task=type==='artist'?artistImage(item.name):trackArtwork(item.name,item.artist);
       task.then(url=>{
         if(!url)return;artworkCache.set(cacheKey,url);
-        if(token!==requestToken)return;
+        if(token!==requestToken[type]||!$('artworkLookupEnabled')?.checked)return;
         item[type==='artist'?'imageUrl':'artworkUrl']=url;
         const limit=type==='artist'?artistLimit:trackLimit;
         const visible=(type==='artist'?summary?.artists:summary?.tracks)||[];
@@ -256,6 +257,7 @@
     $('experienceRange').addEventListener('change',update);
     $('experienceStart').addEventListener('change',()=>{if($('experienceRange').value==='custom')update();});
     $('experienceEnd').addEventListener('change',()=>{if($('experienceRange').value==='custom')update();});
+    $('artworkLookupEnabled').addEventListener('change',()=>{requestToken.artist++;requestToken.track++;if($('artworkLookupEnabled').checked){renderRanks('artist');renderRanks('track');}else{artworkCache.clear();renderRanks('artist');renderRanks('track');}});
     $('artistsLoadMore').addEventListener('click',()=>{artistLimit=Math.min(50,artistLimit+10);renderRanks('artist');});
     $('tracksLoadMore').addEventListener('click',()=>{trackLimit=Math.min(50,trackLimit+10);renderRanks('track');});
     $('artistsCollapse').addEventListener('click',()=>{artistLimit=10;renderRanks('artist');});
