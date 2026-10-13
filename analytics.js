@@ -273,7 +273,7 @@
   }
   function buildStory(input, options) {
     const opts = options || {}, range = opts.range || dateRange('allTime');
-    const summary = summarize(input, { range, includeUnqualifiedGroups: true });
+    const summary = summarize(input, { range, includeUnqualifiedGroups: true, requireTrackAndArtistForDuration: opts.requireTrackAndArtistForDuration === true });
     if (!summary.valid) return { valid: false, error: summary.error, stories: [] };
     const records = summary.records || [];
     const incomplete = opts.incomplete !== false;
@@ -324,7 +324,7 @@
     else if(summary.plays>=10 && streak.longest.days>=5) identity={title:'The Steady Signal',basis:'Rule: at least 10 qualifying plays and a longest streak of at least 5 consecutive active UTC dates.'};
     if(identity) add({ type:'identity', eyebrow:'LISTENING IDENTITY', title:identity.title, body:identity.basis+' This label describes only the imported records in this date range; it is not a psychological or genre claim.' });
     const discoveries=firstObserved(input,{range});
-    if(discoveries.tracks.length) add({ type:'first-observed', eyebrow:'ARCHIVE DISCOVERY', title:discoveries.tracks[0].name, body:'Earliest observed occurrence in this imported history and selected date range: ' + discoveries.tracks[0].date + ' UTC, by ' + (summary.records.find(r=>r.track===discoveries.tracks[0].name)?.primaryArtist || 'an artist not resolved here') + '. This is not a claim about your lifetime first listen.' });
+    if(discoveries.tracks.length) add({ type:'first-observed', eyebrow:'ARCHIVE DISCOVERY', title:discoveries.tracks[0].name, body:'Earliest observed occurrence in this imported history and selected date range: ' + discoveries.tracks[0].date + ' UTC. Track groups are identified by track name + primary artist. This is not a claim about your lifetime first listen.' });
     const finalBits=[];
     if(summary.total>0) finalBits.push(fmt(Math.floor(summary.total/60000))+' recorded minutes');
     finalBits.push(fmt(summary.plays)+' qualifying plays');
