@@ -300,3 +300,39 @@ html[data-theme="futuristic"] .insight-card,html[data-theme="futuristic"] .insig
 .report-export-row .tiny{flex:1 1 260px;min-width:0;margin:0;color:var(--muted);line-height:1.6}
 .report-export-row .button{min-height:42px}
 @media(max-width:760px){.report-export-row{align-items:stretch;flex-direction:column}.report-export-row .button{width:100%;justify-content:center}.report-export-row .tiny{flex:auto}}
+
+/* Phase 5: accessible Story Mode and share-card controls */
+.story-intro-actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px;max-width:560px}
+.story-intro-actions p{margin:0}
+.story-panel[hidden],#storyLaunch[hidden]{display:none!important}
+.story-settings{display:flex;align-items:flex-end;flex-wrap:wrap;gap:14px 20px;margin:15px 0 18px}
+.story-range-setting{display:flex;flex-direction:column;gap:6px;min-width:min(100%,290px)}
+#storyRangeMode{max-width:100%;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:10px 12px;color:var(--ink);font:11px 'DM Mono',monospace}
+.story-check{display:flex;align-items:center;gap:8px;min-height:40px;color:var(--muted);font:11px/1.5 'DM Mono',monospace;cursor:pointer}
+.story-check input{width:17px;height:17px;accent-color:var(--lime);flex:0 0 auto}
+.story-slide{animation:slideIn .32s ease both}
+.story-slide .story-list{list-style:none;margin:2px 0 14px;padding:0;display:flex;flex-direction:column;gap:7px;max-width:760px;width:100%}
+.story-slide .story-list li{border-left:3px solid var(--lime);padding:6px 0 6px 12px;color:var(--ink);font-size:clamp(13px,1.8vw,17px);line-height:1.5;overflow-wrap:anywhere;word-break:normal}
+.story-slide .story-meta{margin-top:16px!important;padding-top:12px;border-top:1px solid #ffffff30;color:#d1cfc8!important;font:10px/1.7 'DM Mono',monospace!important;overflow-wrap:anywhere}
+.story-controls{align-items:stretch;flex-wrap:wrap}
+.story-controls .button{flex:1 1 145px;min-height:44px;white-space:normal}
+.story-progress[role="progressbar"]{outline-offset:4px}
+html[data-theme="y2k"] .story-slide{background:radial-gradient(ellipse at 80% 20%,#a77bff 0,transparent 44%),linear-gradient(135deg,#41174f,#251132)}
+html[data-theme="y2k"] .story-slide .story-list li{border-color:#ff91df}
+html[data-theme="futuristic"] .story-slide{background:radial-gradient(ellipse at 80% 20%,#55616c 0,transparent 44%),linear-gradient(135deg,#262e36,#12161b)}
+html[data-theme="futuristic"] .story-slide .story-list li{border-color:#cbd5dd}
+@media(max-width:760px){
+ .story-intro-actions{width:100%;max-width:none}
+ .story-intro-actions .button{width:100%;justify-content:center}
+ .story-settings{align-items:stretch;flex-direction:column;gap:8px}
+ .story-range-setting{min-width:0;width:100%}
+ #storyRangeMode{width:100%}
+ .story-check{min-height:36px}
+ .story-panel{padding:15px}
+ .story-slide{min-height:400px;padding:22px}
+ .story-slide h3{font-size:clamp(32px,9vw,52px);line-height:1.02}
+ .story-slide .story-number{font-size:clamp(52px,15vw,90px)}
+ .story-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .story-controls .button{width:100%;min-width:0;padding:12px 8px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.story-slide,.story-refresh{animation:none!important;transform:none!important}}
