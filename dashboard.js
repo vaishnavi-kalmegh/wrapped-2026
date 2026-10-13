@@ -123,7 +123,8 @@
 
   function csvCell(value) {
     const text = String(value == null ? '' : value);
-    return '"' + text.replace(/"/g, '""') + '"';
+    const spreadsheetSafe = /^[\\t\\r ]*[=+\\-@]/.test(text) ? "'" + text : text;
+    return '"' + spreadsheetSafe.replace(/"/g, '""') + '"';
   }
   function exportReport() {
     const status = $('reportExportStatus');
