@@ -49,7 +49,7 @@
     const artistArray = Array.isArray(first(raw, ['artistName', 'artist_name', 'artist'])) ? first(raw, ['artistName', 'artist_name', 'artist']) : [];
     const secondaryArtists = [...new Set([...stringList(secondaryRaw), ...artistArray.slice(1).map(clean)].filter(a => a && a !== primaryArtist))];
     const albumRaw = first(raw, ALBUM_KEYS);
-    const album = clean(typeof albumRaw === 'object' ? (albumRaw.name || albumRaw.album_name || '') : albumRaw);
+    const album = clean(albumRaw != null && typeof albumRaw === 'object' ? (albumRaw.name || albumRaw.album_name || '') : albumRaw);
     const durationRaw = first(raw, DURATION_KEYS);
     const durationNumber = durationRaw == null ? 0 : Number(durationRaw);
     const durationMs = Number.isFinite(durationNumber) && durationNumber > 0 ? durationNumber : 0;
