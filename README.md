@@ -17,7 +17,7 @@ A chaotic, unofficial, data-driven music + life recap. Built with plain HTML, CS
 
 ## Run the app
 
-Open `index.html` in a modern browser, or publish the repository root using GitHub Pages. The app uses three local scripts: `analytics.js` (normalization and calculations), `script.js` (the existing 2026 Wrapped experience), and `dashboard.js` (the range-aware detailed analytics views).
+Open `index.html` in a modern browser, or publish the repository root using GitHub Pages. The app uses four local scripts: `analytics.js` (normalization and calculations), `script.js` (the 2026 Wrapped experience and Story Mode), `dashboard.js` (range-aware detailed analytics views and CSV export), and `insights.js` (evidence-based milestones, streaks, archive observations and comparisons).
 
 ## Import formats and aliases
 
