@@ -35,7 +35,7 @@ test('short events contribute duration but not qualifying rankings', () => {
 });
 test('primary and secondary artists are weighted; missing secondary metadata is safe', () => {
   const s=A.summarize([row('2026-01-01T00:00:00Z','Collab','Lead',60000,{featured_artists:['Guest']}),row('2026-01-02T00:00:00Z','Solo','Solo Artist',45000)]);
-  assert.equal(s.artists.find(x=>x.name==='Lead').plays,1); assert.equal(s.artists.find(x=>x.name==='Guest').plays,0.5); assert.equal(s.artists.find(x=>x.name==='Solo Artist').plays,1);
+  assert.equal(s.artists.find(x=>x.name==='Lead').plays,1); assert.equal(s.artists.find(x=>x.name==='Guest').plays,0.5); assert.equal(s.artists.find(x=>x.name==='Solo Artist').plays,1); assert.ok(s.tracks.find(x=>x.name==='Collab').artistNames.includes('Guest'));
 });
 test('same title by different artists stays in separate track groups', () => {
   const s=A.summarize([row('2026-01-01T00:00:00Z','Home','Artist A',45000),row('2026-01-02T00:00:00Z','Home','Artist B',45000)]);
