@@ -126,7 +126,7 @@ These commands are also run by the existing GitHub Actions workflow on relevant 
 2. Open **Press play on your year**. The default story range is the established **2026 Wrapped window: Jan 1 through Nov 15, 2026 UTC**.
 3. Use **Story range** to keep that window or choose **Dashboard selected range**. The latter follows the shared All time / This year / Last 12 months / custom inclusive UTC date range controls. All time may include undated events; bounded date ranges exclude undated events.
 4. Use Previous / Next or focus within Story Mode and use the left/right arrow keys. Story progress is announced to assistive technology. Exit Story Mode to collapse the sequence; reopen it with the launcher.
-5. Choose **Save PNG card** to export the current story. The selected slide determines which statistics are included. The two checkboxes let you include or omit the range label and data-quality note. No album artwork is downloaded; cards use locally drawn shapes and text.
+5. Choose **Save PNG card** to export the current story. The selected slide determines which statistics are included. The range checkbox lets you include or omit the date range; a separate checkbox adds a calculation note. Every exported card retains a concise caveat that it is based on imported history and may be incomplete. No album artwork is downloaded; cards use locally drawn shapes and text.
 6. Choose **Export local CSV report** in the detailed dashboard if you want summary tables instead of a visual story card.
 
 ### Story calculations and evidence rules
