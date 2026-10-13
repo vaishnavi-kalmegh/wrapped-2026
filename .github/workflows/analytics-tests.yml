@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'analytics.js'
+      - 'insights.js'
       - 'script.js'
       - 'dashboard.js'
       - 'index.html'
@@ -29,6 +30,7 @@ jobs:
         with:
           node-version: 20
       - run: node --check analytics.js
+      - run: node --check insights.js
       - run: node --check script.js
       - run: node --check dashboard.js
       - run: node --test tests/analytics.test.js
