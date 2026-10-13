@@ -580,6 +580,9 @@ test('Phase 6 story-first navigation, portrait export, keyboard, mobile and redu
   for(const id of ['artistsLoadMore','tracksLoadMore','artistsCollapse','tracksCollapse','storyViewer','storyPrevious','storyNext','storyClose','storyDownload','artworkLookupEnabled'])assert.ok(html.includes('id="'+id+'"'),id+' missing');
   assert.match(script,/canvas\.width=1080/);
   assert.match(script,/canvas\.height=1920/);
+  assert.match(script,/\.catch\(\(\)=>\{\}\)/);
+  assert.match(script,/findTrackArtwork/);
+  assert.ok(css.includes('.art-fallback'));
   assert.match(script,/Image export failed|PNG export failed/);
   assert.match(script,/ArrowRight/);
   assert.match(script,/ArrowLeft/);
