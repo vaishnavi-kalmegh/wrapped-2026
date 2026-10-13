@@ -320,3 +320,13 @@ test('first-observed discoveries respect selected UTC range and exclude undated 
   assert.deepEqual(found.tracks.map(x=>x.name),['In range']);
   assert.deepEqual(found.artists.map(x=>x.name),['Artist']);
 });
+
+
+test('timestamp parsing rejects implicit JavaScript coercions but accepts valid epoch values', () => {
+  assert.equal(A.parseTimestamp(true),null);
+  assert.equal(A.parseTimestamp({timestamp:'2026-01-01'}),null);
+  assert.equal(A.parseTimestamp('123'),null);
+  assert.equal(A.parseTimestamp('not-a-date'),null);
+  assert.equal(A.parseTimestamp('1767225600'),Date.UTC(2026,0,1));
+  assert.equal(A.parseTimestamp('2026-01-01T00:00:00Z'),Date.UTC(2026,0,1));
+});
