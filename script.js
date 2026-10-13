@@ -158,7 +158,7 @@ function renderSlide(){
  if(!slides.length){
   const ey=document.createElement('p'),h=document.createElement('h3'),p=document.createElement('p');
   ey.className='eyebrow';ey.textContent='WAITING FOR THE RECEIPTS';h.textContent='Your year has a soundtrack.';p.textContent='Import your history to unlock a verified sequence of listening stories.';
-  el.append(ey,h,p);$('storyCounter').textContent='0 / 0';$('storyProgress').replaceChildren();
+  el.append(ey,h,p);$('storyCounter').textContent='0 / 0';$('storyProgress').replaceChildren();$('storyProgress').setAttribute('aria-valuemin','0');$('storyProgress').setAttribute('aria-valuemax','0');$('storyProgress').setAttribute('aria-valuenow','0');$('storyProgress').setAttribute('aria-valuetext','No story loaded');
   $('storyPrev').disabled=true;$('storyNext').disabled=true;$('downloadCard').disabled=true;$('storyNext').textContent='NEXT SLIDE ↗';
   return;
  }
