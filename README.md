@@ -5,6 +5,7 @@ A chaotic, unofficial, data-driven music + life recap. Built with plain HTML, CS
 ## Features
 
 - Import one or more Spotify Extended Streaming History JSON files, processed locally in the browser.
+- View a compact lifetime overview with all-time, this-year, rolling 12-month and custom inclusive UTC date ranges, without changing the existing 2026 Wrapped section.
 - Keep the existing 2026 Wrapped story, top-five artists/tracks, awards, UTC heatmap, monthly timeline, themes, PNG story-card export, friend comparison and user-authored Life Wrapped.
 - Reuse the analytics engine for lifetime totals or filtered date ranges (all time, this year, last 12 months, or custom dates).
 - View import diagnostics for recognized files, accepted/rejected records, invalid timestamps, missing metadata and excluded episode/audiobook records.
@@ -18,6 +19,8 @@ Open `index.html` in a modern browser, or publish the repository root using GitH
 ## Import formats and aliases
 
 The import accepts a top-level JSON array or an object containing an array under `items`, `streamingHistory`, `streaming_history`, `endsong`, `records`, or `history`. One or many files may be selected together; files with invalid JSON or unrecognized structures are reported without discarding valid rows from other files.
+
+The lifetime overview is a small Phase 1 integration, not the full dashboard. Changing its date range recalculates totals and rankings from the same imported records; it does not alter the Wrapped story, heatmap, awards or friend-comparison window.
 
 The normalizer recognizes common export aliases:
 
