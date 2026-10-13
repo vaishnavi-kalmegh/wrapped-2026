@@ -224,6 +224,7 @@
     if(line)lines.push(line);const shown=lines.slice(0,maxLines);if(lines.length>maxLines&&shown.length)shown[shown.length-1]=shown[shown.length-1].replace(/[.…]*$/,'')+'…';
     shown.forEach((s,i)=>ctx.fillText(s,x,y+i*lineHeight));return y+shown.length*lineHeight;
   }
+  function loadCanvasImage(url){return new Promise(resolve=>{if(!url||typeof Image==='undefined'){resolve(null);return;}const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url;});}
   async function downloadStory(){
     const slide=slideList[slideIndex];if(!slide)return;
     try{
@@ -234,7 +235,7 @@
       ctx.fillStyle=ink;ctx.font='700 82px sans-serif';let y=wrapText(ctx,slide.title,72,370,900,94,4)+55;
       ctx.fillStyle=accent;ctx.fillRect(72,y,140,7);y+=70;
       ctx.fillStyle=ink;ctx.font='36px sans-serif';y=wrapText(ctx,slide.body||'',72,y,900,52,7)+35;
-      if(slide.items&&slide.items.length){ctx.font='600 31px sans-serif';slide.items.slice(0,5).forEach((x,i)=>{ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);ctx.fillStyle=ink;y=wrapText(ctx,x.name,150,y,680,40,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,150,y,680,32,1);}ctx.fillStyle=accent;ctx.font='25px monospace';y=wrapText(ctx,x.value,150,y,760,31,1)+30;ctx.font='600 31px sans-serif';});}
+      if(slide.items&&slide.items.length){ctx.font='600 31px sans-serif';for(const x of slide.items.slice(0,5)){ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);const art=await loadCanvasImage(x.imageUrl);const textX=art?222:150;if(art){ctx.save();ctx.beginPath();ctx.rect(145,y-34,58,58);ctx.clip();ctx.drawImage(art,145,y-34,58,58);ctx.restore();}ctx.fillStyle=ink;y=wrapText(ctx,x.name,textX,y,art?650:720,40,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,textX,y,art?650:720,32,1);}ctx.fillStyle=accent;ctx.font='25px monospace';y=wrapText(ctx,x.value,textX,y,760,31,1)+30;ctx.font='600 31px sans-serif';}}
       if(slide.detail){ctx.fillStyle='#b8b8b8';ctx.font='24px sans-serif';y=wrapText(ctx,slide.detail,72,Math.min(y+25,1480),900,34,4);}
       ctx.fillStyle='#b8b8b8';ctx.font='22px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',72,1740,900,32,2);
       ctx.fillStyle=accent;ctx.fillRect(72,1840,936,4);ctx.fillStyle=ink;ctx.font='22px monospace';ctx.fillText((range.label||'Selected range').toUpperCase(),72,1880);
