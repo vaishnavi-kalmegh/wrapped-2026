@@ -9,6 +9,7 @@ A chaotic, unofficial, data-driven music + life recap. Built with plain HTML, CS
 - Search, sort and incrementally render large track/artist/album rankings; inspect per-artist track breakdowns and search chronologically ordered events.
 - Explore busiest UTC dates, year-specific monthly totals and hourly activity without combining the same month across different years.\n- View a compact lifetime overview with all-time, this-year, rolling 12-month and custom inclusive UTC date ranges, without changing the existing 2026 Wrapped section.
 - Keep the existing 2026 Wrapped story, top-five artists/tracks, awards, UTC heatmap, monthly timeline, themes, PNG story-card export, friend comparison and user-authored Life Wrapped.
+- Step through evidence-based Story Mode cards for duration, top tracks/artists, peak UTC month/day, streaks, repeat listening, optional rule-based identity, archive observations and a final recap. Export the selected story as a local PNG.
 - Reuse the analytics engine for lifetime totals or filtered date ranges (all time, this year, last 12 months, or custom dates).
 - View import diagnostics for recognized files, accepted/rejected records, invalid timestamps, missing metadata and excluded episode/audiobook records.
 - Compare two people's selected histories locally and only with their permission.
@@ -115,3 +116,39 @@ node --test tests/analytics.test.js
 These commands are also run by the existing GitHub Actions workflow on relevant pushes to `main` and pull requests. A successful workflow verifies those commands against synthetic fixtures; it does not replace a browser/mobile smoke test with a real export.
 
 - Possible duplicate file selections with matching name, size and modification time are warned about but retained; the app never guesses that matching events should be deduplicated.
+
+
+## Phase 5 — Personalized Story Mode and recap cards
+
+### Using Story Mode
+
+1. Import one or more Spotify Extended Streaming History JSON files in the upload section.
+2. Open **Press play on your year**. The default story range is the established **2026 Wrapped window: Jan 1 through Nov 15, 2026 UTC**.
+3. Use **Story range** to keep that window or choose **Dashboard selected range**. The latter follows the shared All time / This year / Last 12 months / custom inclusive UTC date range controls. All time may include undated events; bounded date ranges exclude undated events.
+4. Use Previous / Next or focus within Story Mode and use the left/right arrow keys. Story progress is announced to assistive technology. Exit Story Mode to collapse the sequence; reopen it with the launcher.
+5. Choose **Save PNG card** to export the current story. The selected slide determines which statistics are included. The two checkboxes let you include or omit the range label and data-quality note. No album artwork is downloaded; cards use locally drawn shapes and text.
+6. Choose **Export local CSV report** in the detailed dashboard if you want summary tables instead of a visual story card.
+
+### Story calculations and evidence rules
+
+- **Listening duration** sums positive recorded duration values for eligible music records under the existing Wrapped eligibility rules; short events still contribute duration even when they do not qualify as plays. The legacy Wrapped story requires track and primary-artist names for duration totals. In Story Mode, this same rule is retained.
+- **Qualifying plays** require a duration strictly greater than 30,000 ms. A 30,000 ms event does not qualify.
+- **Top tracks** are grouped by normalized track name + primary artist and ranked using qualifying play counts, with recorded duration as the tie-breaker.
+- **Top artists** show estimated play points: primary artist = 1.0 and each explicitly listed secondary artist = 0.5 per qualifying event. These are estimates, not Spotify's proprietary ranking. Artist-attributed collaborator durations overlap and are never described as unique total listening time.
+- **Peak month/day** are shown only when there is positive recorded duration in a dated UTC bucket. Streaks use the shared UTC definition: a date is active when at least one eligible music record has a valid timestamp and positive recorded duration; missing dates break a streak.
+- **Repeat-listening** is shown only when the top track group has at least two qualifying plays. Its share is that group's qualifying plays divided by total qualifying plays in the same Story Mode range.
+- **Listening identity** is omitted unless the data crosses a documented threshold. Rules: “The Loop Architect” requires at least 10 qualifying plays and a top track share of at least 20%; “The Deep-Catalog Drifter” requires at least 10 plays, at least 20 qualifying track groups and a top track share below 10%; “The Steady Signal” requires at least 10 plays and a longest active-day streak of at least 5 days. These labels describe archive metrics only, not personality, genre, or mood.
+- **Archive discoveries** are the earliest observed dated track group within the selected imported records and range. They do not claim a lifetime-first listen; older history may be missing.
+- **Final recap** includes only calculated duration, qualifying plays, top track/artist when available, and streak information when dated positive-duration records support it. Empty ranges produce a clear empty state rather than invented numbers.
+- **Incomplete history:** every story is labeled as based on the files selected and warns that the archive may be incomplete. Missing metadata is not inferred. The app cannot verify whether Spotify's export contains every event from the account.
+
+### PNG card export and privacy
+
+- PNG cards are rendered with the browser's canvas at 1080 × 1920 pixels. Export contains the currently selected story only—not raw event rows, account identifiers, or a full history file.
+- The current theme controls the card's colors and decorative styling. No external artwork, remote fonts, tracking, or third-party rendering service is fetched for card generation.
+- Long words and names are split to fit the card text area; Unicode names are preserved in the story content. If canvas rendering or PNG creation fails, the app shows an error message rather than claiming a file was saved.
+- Export is browser-local. No user data is sent to a server. The app does not persist imported history across refreshes.
+
+### Phase 5 verification limits
+
+Story calculations are covered by deterministic synthetic tests, and the repository workflow checks JavaScript syntax plus the Node test suite. These tests do not prove visual rendering, keyboard behavior, mobile layout, or browser download behavior. No real Spotify export was committed or used as a fixture. A manual browser/mobile smoke test and confirmation of the live GitHub Pages deployment remain necessary.
