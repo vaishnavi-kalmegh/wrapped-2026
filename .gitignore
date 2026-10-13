@@ -1,8 +1,13 @@
-# Keep personal Spotify exports out of Git
+# Keep personal Spotify exports and archives out of Git
 Streaming_History*.json
+Streaming_History*.zip
 endsong*.json
 MyData*.zip
+Spotify_Extended_Streaming_History/
+Spotify Extended Streaming History/
+spotify-extended-history/
 spotify-export/
 spotify-data/
+*.spotify-export.zip
 .DS_Store
 Thumbs.db
