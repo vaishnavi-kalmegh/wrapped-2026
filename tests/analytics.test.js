@@ -2,6 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const A = require('../analytics.js');
+global.WrappedAnalytics = A;
+const E = require('../experience.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const row = (ts, trackName, artistName, ms_played, extra = {}) => ({ ts, trackName, artistName, ms_played, ...extra });
@@ -455,5 +457,129 @@ test('Story Mode UI exposes navigation, accessible status, responsive reduced-mo
   assert.match(script,/Image export failed/);
   assert.match(script,/The image was created but the download could not start/);
   assert.match(css,/@media\(max-width:760px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
+
+
+test('Phase 6 rankings show ten by default, expand by batches, cap at fifty, and respect short lists', () => {
+  const ranked=Array.from({length:63},(_,i)=>({name:'Track '+i,plays:100-i,ms:(100-i)*40000}));
+  assert.equal(E.visibleRankings(ranked,10).length,10);
+  assert.deepEqual(E.visibleRankings(ranked,10).map(x=>x.name),ranked.slice(0,10).map(x=>x.name));
+  assert.equal(E.visibleRankings(ranked,20).length,20);
+  assert.equal(E.visibleRankings(ranked,30).length,30);
+  assert.equal(E.visibleRankings(ranked,40).length,40);
+  assert.equal(E.visibleRankings(ranked,50).length,50);
+  assert.equal(E.visibleRankings(ranked,60).length,50);
+  assert.equal(E.visibleRankings(ranked.slice(0,8),10).length,8);
+  assert.equal(E.visibleRankings(ranked.map(x=>({...x,plays:0})),10).length,0);
+});
+
+test('Phase 6 monthly buckets sum short-event duration and calculate consistent percentages', () => {
+  const range=custom('2026-01-01','2026-02-28');
+  const summary=A.summarize([
+    row('2026-01-01T01:00:00Z','Short','A',10000),
+    row('2026-01-02T01:00:00Z','Long','A',40000),
+    row('2026-02-01T01:00:00Z','Short Feb','B',30000),
+    row('2026-02-02T01:00:00Z','Long Feb','B',70000),
+    row('invalid','Undated','C',50000),
+    row('2025-12-31T23:59:59Z','Outside','D',100000)
+  ],{range});
+  const buckets=E.monthBuckets(summary,range);
+  assert.deepEqual(buckets.map(x=>x.id),['2026-01','2026-02']);
+  assert.deepEqual(buckets.map(x=>x.ms),[50000,100000]);
+  assert.ok(Math.abs(buckets.reduce((s,x)=>s+x.share,0)-1)<1e-12);
+  assert.ok(Math.abs(buckets[0].share-1/3)<1e-12);
+  assert.ok(Math.abs(buckets[1].share-2/3)<1e-12);
+});
+
+test('Phase 6 monthly buckets include zero months and never assign undated records to a month', () => {
+  const range=custom('2026-01-01','2026-03-31');
+  const summary=A.summarize([row('2026-01-02T01:00:00Z','Jan','A',40000),row('2026-03-02T01:00:00Z','Mar','A',50000),row('invalid','Undated','A',90000)],{range});
+  const buckets=E.monthBuckets(summary,range);
+  assert.deepEqual(buckets.map(x=>x.id),['2026-01','2026-02','2026-03']);
+  assert.deepEqual(buckets.map(x=>x.ms),[40000,0,50000]);
+  assert.equal(buckets.reduce((s,x)=>s+x.ms,0),90000);
+});
+
+test('Phase 6 hourly aggregation uses UTC buckets and includes short-event duration', () => {
+  const range=custom('2026-01-01','2026-01-02');
+  const summary=A.summarize([
+    row('2026-01-01T23:50:00Z','Late','A',40000),
+    row('2026-01-02T00:10:00Z','Midnight','A',60000),
+    row('2026-01-02T12:00:00Z','Short noon','A',10000),
+    row('invalid','Undated','A',50000)
+  ],{range});
+  const hours=E.hourBuckets(summary);
+  assert.equal(hours.length,24);
+  assert.equal(hours[23].ms,40000);
+  assert.equal(hours[0].ms,60000);
+  assert.equal(hours[12].ms,10000);
+  assert.equal(hours.reduce((s,x)=>s+x.ms,0),110000);
+  assert.ok(Math.abs(hours.reduce((s,x)=>s+x.share,0)-1)<1e-12);
+});
+
+test('Phase 6 heatmap supplies day duration, includes zero-duration dates, and bounds to observed dates', () => {
+  const summary=A.summarize([
+    row('2026-01-01T00:00:00Z','First','A',40000),
+    row('2026-01-03T00:00:00Z','Zero duration','A',0),
+    row('2026-01-05T00:00:00Z','Last','A',50000),
+    row('invalid','Undated','A',80000)
+  ]);
+  const heat=E.heatmapDays(summary);
+  assert.equal(heat.first,'2026-01-01');
+  assert.equal(heat.last,'2026-01-05');
+  assert.deepEqual(heat.days.map(x=>x.date),['2026-01-01','2026-01-02','2026-01-03','2026-01-04','2026-01-05']);
+  assert.deepEqual(heat.days.map(x=>x.ms),[40000,0,0,0,50000]);
+  assert.ok(heat.days.every(x=>x.known===true));
+});
+
+test('Phase 6 Listening Lore uses explicit evidence thresholds and story excludes retired story types', () => {
+  const rows=[];
+  for(let i=0;i<3;i++)rows.push(row('2026-01-01T00:00:'+String(i).padStart(2,'0')+'Z','Loop Song','Artist',40000));
+  for(let i=0;i<7;i++)rows.push(row('2026-01-02T00:00:'+String(i).padStart(2,'0')+'Z','Other '+i,'Artist',40000));
+  const range=custom('2026-01-01','2026-12-31'),summary=A.summarize(rows,{range});
+  const lore=E.loreFor(summary),stories=E.makeStory(summary,range);
+  assert.equal(lore.kind,'repeat');
+  assert.match(lore.basis,/at least 10 qualifying plays/i);
+  assert.equal(stories[0].type,'lore');
+  assert.ok(!stories.some(x=>x.type==='streak'||x.type==='first-observed'));
+  assert.ok(stories.some(x=>x.type==='artists'));
+  assert.ok(stories.some(x=>x.type==='tracks'));
+});
+
+test('Phase 6 artwork matches require exact track and artist metadata; failures safely fall back', () => {
+  const results=[
+    {trackName:'Other Song',artistName:'Artist',artworkUrl100:'https://example.test/wrong.jpg'},
+    {trackName:'Song ✨',artistName:'Different Artist',artworkUrl100:'https://example.test/wrong-artist.jpg'},
+    {trackName:'Song ✨',artistName:'Artist',artworkUrl600:'https://example.test/right.jpg'}
+  ];
+  assert.equal(E.findTrackArtwork(results,'Song ✨','Artist'),'https://example.test/right.jpg');
+  assert.equal(E.findTrackArtwork(results,'Song ✨','Missing Artist'),null);
+  assert.equal(E.findTrackArtwork([], 'Unknown','Unknown'),null);
+  assert.equal(E.isExactArtistPage('Björk','Björk'),true);
+  assert.equal(E.isExactArtistPage('Björk (album)','Björk'),false);
+  assert.equal(E.isExactArtistPage('Other Artist','Björk'),false);
+});
+
+test('Phase 6 story-first navigation, portrait export, keyboard, mobile and reduced-motion contracts exist', () => {
+  const root=path.join(__dirname,'..');
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const script=fs.readFileSync(path.join(root,'experience.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+  const visible=html.split('<div class="legacy-interface" hidden aria-hidden="true">')[0];
+  const order=['id="loreCard"','id="artistCards"','id="trackCards"','id="numbersHeading"','id="patternsHeading"','id="fullStoryHeading"'];
+  let last=-1;
+  for(const token of order){const pos=visible.indexOf(token);assert.ok(pos>last,token+' should appear in story-first order');last=pos;}
+  assert.ok(!visible.includes('id="historyPanel"'));
+  assert.ok(!visible.includes('id="comparisonContent"'));
+  for(const id of ['artistsLoadMore','tracksLoadMore','artistsCollapse','tracksCollapse','storyViewer','storyPrevious','storyNext','storyClose','storyDownload','artworkLookupEnabled'])assert.ok(html.includes('id="'+id+'"'),id+' missing');
+  assert.match(script,/canvas\.width=1080/);
+  assert.match(script,/canvas\.height=1920/);
+  assert.match(script,/Image export failed|PNG export failed/);
+  assert.match(script,/ArrowRight/);
+  assert.match(script,/ArrowLeft/);
+  assert.match(script,/if\(e\.key==='Tab'\)/);
+  assert.match(css,/aspect-ratio:9\/16/);
+  assert.match(css,/@media\(max-width:560px\)/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
