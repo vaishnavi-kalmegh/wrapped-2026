@@ -206,5 +206,44 @@
       return sign * (a.timestamp - b.timestamp) || (a.index ?? 0) - (b.index ?? 0);
     });
   }
-  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents };
+
+  function milestoneBadges(summary) {
+    const s=summary||{};
+    const metrics=[
+      {key:'minutes',label:'Listening time',value:Math.floor((s.total||0)/60000),unit:'minutes',thresholds:[60,300,1000,5000,10000]},
+      {key:'plays',label:'Qualifying plays',value:s.plays||0,unit:'plays',thresholds:[10,100,500,1000,5000]},
+      {key:'tracks',label:'Track groups',value:(s.tracks||[]).filter(t=>t.plays>0).length,unit:'tracks',thresholds:[10,50,100,500,1000]},
+      {key:'artists',label:'Artists heard',value:(s.artistNames||new Set()).size,unit:'artists',thresholds:[10,25,50,100,250]}
+    ];
+    return metrics.map(m=>({...m,earned:m.thresholds.filter(n=>m.value>=n),next:m.thresholds.find(n=>m.value<n)||null}));
+  }
+  function listeningStreaks(input, options) {
+    const n=input&&input.records&&input.diagnostics?input:normalizeRecords(input),range=options&&options.range,active=new Set();
+    n.records.forEach(r=>{if(!r.isNonMusic&&r.timestamp!=null&&r.durationMs>0&&inRange(r,range))active.add(new Date(r.timestamp).toISOString().slice(0,10));});
+    const dates=[...active].sort();let longest={days:0,start:null,end:null},current={days:0,start:null,end:null},previous=null;
+    for(const day of dates){const d=Date.parse(day+'T00:00:00Z');current=previous!=null&&d-previous===86400000?{days:current.days+1,start:current.start,end:day}:{days:1,start:day,end:day};if(current.days>longest.days)longest={...current};previous=d;}
+    const latest=dates[dates.length-1]||null;let currentDays=0,cursor=latest;
+    while(cursor&&active.has(cursor)){currentDays++;const d=new Date(cursor+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);cursor=d.toISOString().slice(0,10);}
+    return {activeDays:dates.length,longest,current:{days:currentDays,end:currentDays?latest:null},dates};
+  }
+  function firstObserved(input, options) {
+    const n=input&&input.records&&input.diagnostics?input:normalizeRecords(input),range=options&&options.range,tracks=new Map(),artists=new Map();
+    const keep=(map,key,label,r)=>{if(!key||r.timestamp==null||r.isNonMusic||!inRange(r,range))return;const old=map.get(key);if(!old||r.timestamp<old.timestamp)map.set(key,{name:label,timestamp:r.timestamp,date:new Date(r.timestamp).toISOString().slice(0,10)});};
+    n.records.forEach(r=>{if(r.durationMs<=0)return;if(r.track&&r.primaryArtist)keep(tracks,r.track.toLocaleLowerCase()+'\u0000'+r.primaryArtist.toLocaleLowerCase(),r.track,r);r.artists.forEach(a=>keep(artists,a.toLocaleLowerCase(),a,r));});
+    const sort=map=>[...map.values()].sort((a,b)=>a.timestamp-b.timestamp||a.name.localeCompare(b.name));
+    return {tracks:sort(tracks),artists:sort(artists)};
+  }
+  function artistConcentration(input, options) {
+    const n=input&&input.records&&input.diagnostics?input:normalizeRecords(input),range=options&&options.range,totals=new Map();let total=0;
+    n.records.forEach(r=>{if(r.isNonMusic||!r.primaryArtist||!inRange(r,range))return;total+=r.durationMs;const key=r.primaryArtist.toLocaleLowerCase(),v=totals.get(key)||{name:r.primaryArtist,ms:0};v.ms+=r.durationMs;totals.set(key,v);});
+    const ranked=[...totals.values()].sort((a,b)=>b.ms-a.ms||a.name.localeCompare(b.name)),topMs=ranked.slice(0,5).reduce((sum,a)=>sum+a.ms,0);
+    return {totalPrimaryArtistMs:total,artists:ranked.map(a=>({...a,share:total?a.ms/total:0})),topArtistShare:total?(ranked[0]?.ms||0)/total:0,topFiveShare:total?topMs/total:0};
+  }
+  function comparePeriods(input, rangeA, rangeB) {
+    const a=summarize(input,{range:rangeA,includeUnqualifiedGroups:true}),b=summarize(input,{range:rangeB,includeUnqualifiedGroups:true});
+    if(!a.valid||!b.valid)return {valid:false,error:a.error||b.error};
+    const metrics=[['listeningMs',a.total,b.total],['qualifyingPlays',a.plays,b.plays],['activeDays',a.activeDays,b.activeDays],['trackGroups',a.tracks.length,b.tracks.length],['artistGroups',a.artists.length,b.artists.length]];
+    return {valid:true,a:{range:a.range,summary:a},b:{range:b.range,summary:b},metrics:metrics.map(([key,previous,current])=>({key,a:previous,b:current,delta:current-previous,changePercent:previous===0?(current===0?0:null):(current-previous)/previous*100}))};
+  }
+  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents, milestoneBadges, listeningStreaks, firstObserved, artistConcentration, comparePeriods };
 });
