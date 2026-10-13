@@ -79,3 +79,16 @@ Do not commit raw Spotify exports or private listening data. The repository's `.
 The Overview, Tracks, Artists, Albums, History and Patterns sections use the selected shared date range (All time, This year, Last 12 months or custom inclusive UTC dates). Tracks and albums rank by qualifying play count by default and can be sorted by recorded listening time; rankings include search and incremental rendering. Artist rows can expand to show matching qualifying track groups. History is newest-first, with undated events at the end of All time. Daily, monthly and hourly duration charts use UTC; month keys include the year, so January 2024 and January 2025 are not combined. The charts explain when timestamps or positive durations are unavailable.
 
 The dashboard does not use external chart libraries, remote services, IndexedDB or persistent browser storage. The active range is a view filter only and never discards imported rows. The existing 2026 Wrapped experience remains on its original Jan 1–Nov 15 UTC window.
+
+## Phase 3 insights
+
+The Insights section adds deterministic milestones for recorded listening minutes, qualifying plays, track groups and artists; active-day and longest streaks; first-observed dates within the imported archive; primary-artist listening-time concentration; equal-length comparisons against the immediately preceding UTC period; and import-quality diagnostics. It shares the dashboard's date-range selector and recalculates when history or range changes.
+
+- **Streaks:** a day is active when at least one non-episode/non-audiobook record has a valid UTC timestamp and positive recorded duration. Multiple plays on one date count as one active day; missing dates break streaks.
+- **First observed:** the earliest valid timestamp for a track + primary-artist group or artist among the imported records in the selected range. This is not a claim about the user's first-ever listen; older history may be absent.
+- **Artist concentration:** recorded duration is attributed only to each record's primary artist for this metric, avoiding collaborator-duration double counting. The separate artist rankings retain their existing weighted collaborator estimates.
+- **Period comparison:** bounded ranges compare the selected interval with the immediately preceding interval of equal duration. Percentage change is shown as unavailable when the earlier baseline is zero and the current value is non-zero; no Infinity/NaN percentage is reported.
+- **Milestones:** thresholds are display markers calculated from the current selected range, not externally verified Spotify achievements.
+- **Diagnostics:** file/record diagnostics are surfaced from the existing local import parser. Insight computations run in the browser on imported rows and do not persist history.
+
+The Phase 3 regression cases are included in `tests/analytics.test.js` and use synthetic fixtures only.
