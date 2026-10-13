@@ -96,6 +96,7 @@
     <section class="dashboard-intro" aria-labelledby="dashboardTitle">
       <p class="eyebrow">DEEP LISTENING // LOCAL ARCHIVE</p><h2 id="dashboardTitle">The details behind the replay.</h2>
       <p>Every dashboard view uses the imported history and the date range selected above. All calendar grouping uses UTC. Artist play counts are estimates, not Spotify's proprietary rankings.</p>
+      <div class="report-export-row"><button class="button button-bright" id="exportReport" type="button">EXPORT LOCAL CSV REPORT ↓</button><p class="tiny" id="reportExportStatus" aria-live="polite">Exports the selected date range's summary and top rankings only. Raw history is not included.</p></div>
     </section>
     <section class="panel dashboard-panel" id="tracksPanel" aria-labelledby="tracksTitle">
       <div class="dashboard-heading"><div><p class="eyebrow">01 / TRACK INDEX</p><h2 id="tracksTitle">Tracks</h2></div><label class="dashboard-control">Search tracks<input id="trackSearch" type="search" placeholder="Track or artist…" autocomplete="off"></label><label class="dashboard-control">Rank by<select id="trackSort"><option value="plays">Qualifying plays</option><option value="time">Recorded listening time</option><option value="title">Title A–Z</option></select></label></div>
