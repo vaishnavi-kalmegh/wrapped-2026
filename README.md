@@ -5,7 +5,9 @@ A chaotic, unofficial, data-driven music + life recap. Built with plain HTML, CS
 ## Features
 
 - Import one or more Spotify Extended Streaming History JSON files, processed locally in the browser.
-- View a detailed analytics dashboard for tracks, artists, albums, event history and listening patterns, all driven by one shared date range.\n- Search, sort and incrementally render large track/artist/album rankings; inspect per-artist track breakdowns and search chronologically ordered events.\n- Explore busiest UTC dates, year-specific monthly totals and hourly activity without combining the same month across different years.\n- View a compact lifetime overview with all-time, this-year, rolling 12-month and custom inclusive UTC date ranges, without changing the existing 2026 Wrapped section.
+- View a detailed analytics dashboard for tracks, artists, albums, event history and listening patterns, all driven by one shared date range.
+- Search, sort and incrementally render large track/artist/album rankings; inspect per-artist track breakdowns and search chronologically ordered events.
+- Explore busiest UTC dates, year-specific monthly totals and hourly activity without combining the same month across different years.\n- View a compact lifetime overview with all-time, this-year, rolling 12-month and custom inclusive UTC date ranges, without changing the existing 2026 Wrapped section.
 - Keep the existing 2026 Wrapped story, top-five artists/tracks, awards, UTC heatmap, monthly timeline, themes, PNG story-card export, friend comparison and user-authored Life Wrapped.
 - Reuse the analytics engine for lifetime totals or filtered date ranges (all time, this year, last 12 months, or custom dates).
 - View import diagnostics for recognized files, accepted/rejected records, invalid timestamps, missing metadata and excluded episode/audiobook records.
@@ -14,7 +16,7 @@ A chaotic, unofficial, data-driven music + life recap. Built with plain HTML, CS
 
 ## Run the app
 
-Open `index.html` in a modern browser, or publish the repository root using GitHub Pages. The app uses two local scripts: `analytics.js` (normalization and calculations) and `script.js` (the existing UI and 2026 Wrapped experience).
+Open `index.html` in a modern browser, or publish the repository root using GitHub Pages. The app uses three local scripts: `analytics.js` (normalization and calculations), `script.js` (the existing 2026 Wrapped experience), and `dashboard.js` (the range-aware detailed analytics views).
 
 ## Import formats and aliases
 
