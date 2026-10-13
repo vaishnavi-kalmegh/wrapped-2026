@@ -277,3 +277,46 @@ test('possible duplicate file selections are warned about but never discarded', 
   assert.equal(A.summarize(x.rows).plays,2);
   assert.ok(x.diagnostics.warnings.some(w=>w.includes('never deduplicated automatically')));
 });
+
+
+test('null, empty and invalid timestamps are diagnosed and excluded from bounded ranges', () => {
+  const rows = [
+    row(null,'Null date','A',40000),
+    row('','Empty date','A',45000),
+    row('not-a-date','Invalid date','A',50000),
+    row('2026-01-01T00:00:00Z','Dated','A',60000)
+  ];
+  const normalized = A.normalizeRecords(rows);
+  assert.equal(normalized.diagnostics.invalidTimestamps,3);
+  assert.equal(A.summarize(rows).total,195000);
+  assert.equal(A.summarize(rows,{range:custom('2026-01-01','2026-01-01')}).total,60000);
+});
+
+test('import diagnostics separate rejected rows, missing metadata, and marked non-music', () => {
+  const x = A.inspectFiles([{name:'mixed.json',data:[
+    row('2026-01-01T00:00:00Z','Music','Artist',40000),
+    row('invalid','Undated','Artist',undefined),
+    {ts:'2026-01-02T00:00:00Z',ms_played:50000},
+    row('2026-01-03T00:00:00Z','Episode','Narrator',80000,{episode_name:'A show'}),
+    null
+  ]}]);
+  assert.equal(x.diagnostics.acceptedRecords,4);
+  assert.equal(x.diagnostics.rejectedRecords,1);
+  assert.equal(x.diagnostics.invalidTimestamps,1);
+  assert.equal(x.diagnostics.missingTrack,1);
+  assert.equal(x.diagnostics.missingArtist,1);
+  assert.equal(x.diagnostics.missingDuration,1);
+  assert.equal(x.diagnostics.excludedNonMusic,1);
+  assert.equal(A.summarize(x.rows).total,90000);
+});
+
+test('first-observed discoveries respect selected UTC range and exclude undated rows', () => {
+  const rows = [
+    row('2025-12-31T23:59:59.999Z','Earlier','Artist',40000),
+    row('2026-01-01T00:00:00.000Z','In range','Artist',40000),
+    row('invalid','Undated','Other',40000)
+  ];
+  const found = A.firstObserved(rows,{range:custom('2026-01-01','2026-12-31')});
+  assert.deepEqual(found.tracks.map(x=>x.name),['In range']);
+  assert.deepEqual(found.artists.map(x=>x.name),['Artist']);
+});
