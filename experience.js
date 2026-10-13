@@ -99,9 +99,10 @@
     const image=img?'<img loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
     return '<article class="music-card '+(rank<=5?'featured':'')+' '+type+'-card"><div class="music-art">'+image+'<span class="music-rank">'+String(rank).padStart(2,'0')+'</span></div><div class="music-meta"><h3 title="'+escapeHTML(name)+'">'+escapeHTML(name)+'</h3><p>'+escapeHTML(artist?sub:item.artist)+'</p><span class="music-metric">'+escapeHTML(artist?number(item.plays)+' estimated play points':number(item.plays)+' qualifying plays')+'</span></div></article>';
   }
+  function visibleRankings(items,limit){const ranked=(items||[]).filter(x=>x&&x.plays>0);return ranked.slice(0,Math.min(50,Math.max(10,Number(limit)||10)));}
   function renderRanks(type){
     const artist=type==='artist',items=artist?(summary?summary.artists:[]):(summary?summary.tracks:[]),limit=artist?artistLimit:trackLimit,container=$(artist?'artistCards':'trackCards'),more=$(artist?'artistsLoadMore':'tracksLoadMore'),status=$(artist?'artistCardsStatus':'trackCardsStatus');
-    const ranked=items.filter(x=>x.plays>0),shown=ranked.slice(0,Math.min(50,limit));
+    const ranked=items.filter(x=>x.plays>0),shown=visibleRankings(items,limit);
     if(!rows.length||!ranked.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>Waiting for your data</h3><p>Import a Spotify history JSON file to rank this section.</p></div>';more.hidden=true;status.textContent='No qualifying results in this range.';return;}
     container.innerHTML=shown.map((x,i)=>rankingCard(x,i+1,type)).join('');
     status.textContent='Showing '+shown.length+' of '+Math.min(50,ranked.length)+' available ranked '+(artist?'artist':'track')+' groups. Rankings use the shared analytics engine.';
@@ -128,20 +129,21 @@
       }).catch(()=>{});
     });
   }
+  function findTrackArtwork(results,track,artist){const match=(results||[]).find(x=>key(x.trackName)===key(track)&&key(x.artistName)===key(artist)&&(x.artworkUrl600||x.artworkUrl100));return match?(match.artworkUrl600||match.artworkUrl100):null;}
+  function isExactArtistPage(title,name){return Boolean(title&&name&&key(title)===key(name));}
   async function trackArtwork(track,artist){
     const query=new URLSearchParams({term:track+' '+artist,entity:'song',limit:'8'});
     const response=await fetch('https://itunes.apple.com/search?'+query.toString(),{mode:'cors'});
     if(!response.ok)throw new Error('Artwork lookup failed');
     const data=await response.json();
-    const match=(data.results||[]).find(x=>key(x.trackName)===key(track)&&key(x.artistName)===key(artist)&&x.artworkUrl100);
-    return match?(match.artworkUrl600||match.artworkUrl100||null):null;
+    return findTrackArtwork(data.results||[],track,artist);
   }
   async function artistImage(name){
     const url='https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(name);
     const response=await fetch(url,{mode:'cors',headers:{Accept:'application/json'}});
     if(!response.ok)throw new Error('Artist image lookup failed');
     const data=await response.json();
-    if(!data.title||key(data.title)!==key(name)||!data.thumbnail||!data.thumbnail.source)return null;
+    if(!isExactArtistPage(data.title,name)||!data.thumbnail||!data.thumbnail.source)return null;
     return data.thumbnail.source;
   }
   function renderNumbers(){
@@ -272,5 +274,5 @@
     update();
   }
   if(root.document){if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',init);else init();}
-  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,rangeFor,escapeHTML};
+  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,rangeFor,escapeHTML,visibleRankings,findTrackArtwork,isExactArtistPage};
 });
