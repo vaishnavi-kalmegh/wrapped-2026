@@ -7,8 +7,8 @@
   'use strict';
   const $=id=>root.document&&root.document.getElementById(id);
   const number=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(n||0);
-  const minutes=ms=>{const seconds=Math.floor(Math.max(0,ms||0)/1000);if(seconds<60)return seconds+' sec';const m=Math.floor(seconds/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+'h '+r+'m';};
-  const hours=ms=>{const value=Math.max(0,ms||0);if(value<60000)return Math.round(value/1000)+' sec';if(value<3600000)return Math.floor(value/60000)+' min';return (value/3600000).toFixed(1)+' h';};
+  const minutes=ms=>{const value=Math.max(0,ms||0);if(value===0)return '0 min';const seconds=Math.floor(value/1000);if(seconds<60)return seconds+' sec';const m=Math.floor(seconds/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+'h '+r+'m';};
+  const hours=ms=>{const value=Math.max(0,ms||0);if(value===0)return '0 min';if(value<60000)return Math.round(value/1000)+' sec';if(value<3600000)return Math.floor(value/60000)+' min';return (value/3600000).toFixed(1)+' h';};
   const safe=(s)=>String(s==null?'':s);
   const key=s=>safe(s).normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g,' ');
   const escapeHTML=s=>safe(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
