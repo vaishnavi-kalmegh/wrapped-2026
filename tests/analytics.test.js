@@ -610,7 +610,7 @@ test('iTunes exact match avoids the fallback query and does not depend on a Wiki
   let calls=0;
   const fetcher=async url=>{
     calls++;
-    assert.match(url,/itunes\\.apple\\.com\\/search/);
+    assert.match(url,/itunes\.apple\.com\/search/);
     return {ok:true,json:async()=>({results:[{trackName:'No Wikipedia Page Needed',artistName:'Independent Artist',artworkUrl600:'https://example.test/album.jpg'}]})};
   };
   assert.equal(await E.lookupTrackArtwork('No Wikipedia Page Needed','Independent Artist',null,fetcher),'https://example.test/album.jpg');
@@ -653,7 +653,7 @@ test('Phase 6 story-first navigation, portrait export, keyboard, mobile and redu
   for(const id of ['artistsLoadMore','tracksLoadMore','artistsCollapse','tracksCollapse','storyViewer','storyPrevious','storyNext','storyClose','storyDownload','artworkLookupEnabled'])assert.ok(html.includes('id="'+id+'"'),id+' missing');
   assert.match(script,/canvas\.width=1080/);
   assert.match(script,/canvas\.height=1920/);
-  assert.match(script,/\.catch\(\(\)=>\{\}\)/);
+  assert.match(script,/\.catch\(\(\)=>\{/);
   assert.match(script,/findTrackArtwork/);
   assert.ok(css.includes('.art-fallback'));
   assert.match(script,/Image export failed|PNG export failed/);
