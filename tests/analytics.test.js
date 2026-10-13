@@ -264,3 +264,16 @@ test('repeated independent imports do not accumulate rows inside the parser', ()
   assert.equal(second.rows.length,1);
   assert.equal(A.summarize(second.rows).plays,1);
 });
+
+
+test('possible duplicate file selections are warned about but never discarded', () => {
+  const record = row('2026-01-01T00:00:00Z','Repeated','Artist',40000);
+  const x = A.inspectFiles([
+    {name:'endsong_0.json',size:100,lastModified:123,data:[record]},
+    {name:'endsong_0.json',size:100,lastModified:123,data:[{...record}]}
+  ]);
+  assert.equal(x.diagnostics.possibleDuplicateFiles.length,1);
+  assert.equal(x.rows.length,2);
+  assert.equal(A.summarize(x.rows).plays,2);
+  assert.ok(x.diagnostics.warnings.some(w=>w.includes('never deduplicated automatically')));
+});
