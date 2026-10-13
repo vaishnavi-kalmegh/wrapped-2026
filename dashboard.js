@@ -29,7 +29,7 @@
   function currentRows() {
     const range = getRange();
     if (!range.valid) return { range, result: null };
-    return { range, result: WrappedAnalytics.summarize(sourceRows, { range }) };
+    return { range, result: WrappedAnalytics.summarize(sourceRows, { range, includeUnqualifiedGroups: true }) };
   }
   function sorted(items, mode, primary) {
     const copy = [...items];
