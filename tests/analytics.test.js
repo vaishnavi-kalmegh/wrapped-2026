@@ -2,6 +2,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const A = require('../analytics.js');
+const fs = require('node:fs');
+const path = require('node:path');
 const row = (ts, trackName, artistName, ms_played, extra = {}) => ({ ts, trackName, artistName, ms_played, ...extra });
 const custom = (start, end) => A.dateRange('custom', { start, end });
 
@@ -436,4 +438,22 @@ test('Story Mode identity labels follow documented thresholds and omit unsupport
   const steady=A.buildStory(steadyRows,{range});
   assert.equal(steady.stories.find(s=>s.type==='identity').title,'The Steady Signal');
   assert.match(steady.stories.find(s=>s.type==='identity').body,/5 consecutive active UTC dates/);
+});
+
+
+test('Story Mode UI exposes navigation, accessible status, responsive reduced-motion, and export failure paths', () => {
+  const root=path.join(__dirname,'..');
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const script=fs.readFileSync(path.join(root,'script.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+  for(const id of ['storyPanel','storyLaunch','storyExit','storyPrev','storyNext','storyProgress','storySlide','downloadCard','storyRangeMode','includeRangeOnCard','includeMethodOnCard'])assert.ok(html.includes('id="'+id+'"'),id+' control missing');
+  assert.match(html,/aria-live="polite"/);
+  assert.match(script,/ArrowRight/);
+  assert.match(script,/ArrowLeft/);
+  assert.match(script,/function wrapText/);
+  assert.match(script,/canvas\.toBlob/);
+  assert.match(script,/Image export failed/);
+  assert.match(script,/The image was created but the download could not start/);
+  assert.match(css,/@media\(max-width:760px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
