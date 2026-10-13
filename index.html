@@ -151,17 +151,22 @@
       <article class="panel ranking-panel"><div class="panel-title"><p class="eyebrow">TOP FIVE</p><h3>Soundtrack of the year.</h3></div><ol class="rank-list" id="topTracks"><li class="empty-row">Your top tracks will appear after upload.</li></ol></article>
     </section>
 
-    <section class="section-head">
-      <div><p class="eyebrow">THE PLOT TWIST</p><h2>Press play on your year.</h2></div>
-      <p>Animated, full-screen-style story slides built from your uploaded records. Use the arrows or keyboard to move through the story.</p>
+    <section class="section-head" aria-labelledby="storyModeHeading">
+      <div><p class="eyebrow">THE PLOT TWIST</p><h2 id="storyModeHeading">Press play on your year.</h2></div>
+      <div class="story-intro-actions"><p>Step through a recap built from imported records. Story cards omit unsupported insights; no autoplay or account connection is needed.</p><button class="button button-quiet" id="storyLaunch" type="button" hidden>OPEN STORY MODE ↗</button></div>
     </section>
-    <section class="panel story-panel">
+    <section class="panel story-panel" id="storyPanel" tabindex="-1" aria-label="Personalized listening Story Mode">
       <div class="story-topline"><span class="eyebrow">YOUR RECAP / STORY MODE</span><span class="tiny visually-hidden" id="storyCounter" aria-live="polite">Story progress</span></div>
-      <div class="story-progress" id="storyProgress" aria-label="Story progress"></div>
-      <article class="story-slide" id="storySlide" aria-live="polite">
-        <p class="eyebrow">WAITING FOR THE RECEIPTS</p><h3>Your year has a soundtrack.</h3><p>Upload your streaming history to unlock your personalized story.</p>
+      <div class="story-settings">
+        <div class="story-range-setting"><label class="field-label" for="storyRangeMode">STORY RANGE</label><select id="storyRangeMode"><option value="wrapped2026">2026 Wrapped window (Jan 1–Nov 15 UTC)</option><option value="dashboard">Dashboard selected range</option></select></div>
+        <label class="story-check"><input id="includeRangeOnCard" type="checkbox" checked> Include date range on PNG</label>
+        <label class="story-check"><input id="includeMethodOnCard" type="checkbox" checked> Include data-quality note</label>
+      </div>
+      <div class="story-progress" id="storyProgress" role="progressbar" aria-label="Story progress" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1"></div>
+      <article class="story-slide" id="storySlide" tabindex="-1" aria-live="polite" aria-atomic="true" aria-roledescription="slide">
+        <p class="eyebrow">WAITING FOR THE RECEIPTS</p><h3>Your year has a soundtrack.</h3><p>Import your history to unlock a verified sequence of listening stories.</p>
       </article>
-      <div class="story-controls"><button class="button button-quiet" id="storyPrev" type="button" disabled>← PREVIOUS</button><button class="button button-quiet" id="downloadCard" type="button" disabled>↓ SAVE CARD</button><button class="button button-bright" id="storyNext" type="button" disabled>NEXT SLIDE ↗</button></div>
+      <div class="story-controls"><button class="button button-quiet" id="storyPrev" type="button" disabled>← PREVIOUS</button><button class="button button-quiet" id="downloadCard" type="button" disabled>↓ SAVE PNG CARD</button><button class="button button-quiet" id="storyExit" type="button">EXIT STORY MODE</button><button class="button button-bright" id="storyNext" type="button" disabled>NEXT SLIDE ↗</button></div>
     </section>
 
     <section class="section-head">
