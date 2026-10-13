@@ -56,6 +56,39 @@
     </section>
 
     <section class="section-head">
+      <div><p class="eyebrow">THE FULL ARCHIVE</p><h2>Your lifetime listening.</h2></div>
+      <p>This overview uses the same analytics engine across all imported years. The original Wrapped section below stays locked to its 2026 window.</p>
+    </section>
+    <section class="panel lifetime-panel" aria-labelledby="lifetimeHeading">
+      <div class="lifetime-controls">
+        <div><label class="field-label" for="analyticsRange">DATE RANGE</label>
+          <select id="analyticsRange">
+            <option value="allTime">All time</option>
+            <option value="thisYear">This year (UTC)</option>
+            <option value="last12Months">Last 12 months</option>
+            <option value="custom">Custom dates</option>
+          </select>
+        </div>
+        <div id="customRangeFields" class="custom-range-fields" hidden>
+          <div><label class="field-label" for="rangeStart">START DATE (UTC)</label><input id="rangeStart" type="date"></div>
+          <div><label class="field-label" for="rangeEnd">END DATE (UTC)</label><input id="rangeEnd" type="date"></div>
+        </div>
+        <button class="button button-bright" id="applyRange" type="button">UPDATE RANGE ↗</button>
+      </div>
+      <p class="tiny lifetime-status" id="lifetimeStatus" aria-live="polite">Upload your history above to calculate lifetime totals. Imported files remain in this browser only.</p>
+      <div class="lifetime-metrics" aria-label="Lifetime analytics summary">
+        <article><span class="stat-label">RECORDED LISTENING</span><strong id="lifetimeTime">—</strong><span class="stat-foot">Recorded duration only</span></article>
+        <article><span class="stat-label">QUALIFYING PLAYS</span><strong id="lifetimePlays">—</strong><span class="stat-foot">Strictly over 30 seconds</span></article>
+        <article><span class="stat-label">ARTIST NAMES</span><strong id="lifetimeArtists">—</strong><span class="stat-foot">From qualifying events</span></article>
+        <article><span class="stat-label">ALBUM GROUPS</span><strong id="lifetimeAlbums">—</strong><span class="stat-foot">Only when album metadata exists</span></article>
+      </div>
+      <div class="lifetime-lists">
+        <div><h3>Top artists <span>(weighted estimate)</span></h3><ol id="lifetimeTopArtists" class="lifetime-list"><li>Upload history to begin.</li></ol></div>
+        <div><h3>Top tracks</h3><ol id="lifetimeTopTracks" class="lifetime-list"><li>Upload history to begin.</li></ol></div>
+      </div>
+    </section>
+
+    <section class="section-head">
       <div><p class="eyebrow">THE NUMBERS</p><h2>Your listening lore.</h2></div>
       <span class="data-badge" id="dataBadge">NO DATA LOADED</span>
     </section>
