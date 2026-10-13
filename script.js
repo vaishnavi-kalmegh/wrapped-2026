@@ -294,7 +294,7 @@ $('storyExit').addEventListener('click',()=>{$('storyPanel').hidden=true;$('stor
 $('storyLaunch').addEventListener('click',()=>{$('storyLaunch').hidden=true;$('storyPanel').hidden=false;$('storySlide').focus()});
 window.addEventListener('wrapped-range-changed',()=>{if($('storyRangeMode').value==='dashboard')buildSlides()});
 document.addEventListener('keydown',e=>{
- if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName))return;
+ if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
  const panel=$('storyPanel');
  if(!panel||panel.hidden||!panel.contains(document.activeElement))return;
  if(e.key==='ArrowRight'&&slideIndex<slides.length-1){e.preventDefault();slideIndex++;renderSlide()}
