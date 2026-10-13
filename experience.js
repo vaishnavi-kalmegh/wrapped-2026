@@ -158,7 +158,8 @@
     const buckets=monthBuckets(summary,range),chart=$('monthDonut'),legend=$('monthLegend'),status=$('monthChartStatus');
     chart.replaceChildren();legend.replaceChildren();
     const populated=buckets.filter(x=>x.ms>0),total=populated.reduce((s,x)=>s+x.ms,0);
-    if(!populated.length){status.textContent='Monthly distribution is unavailable: no positive timestamped listening duration in this range.';chart.innerHTML='<p class="empty-state">No timestamped listening yet.</p>';return;}
+    if(!buckets.length){status.textContent='Monthly distribution is unavailable: no valid timestamps in this range, so no month can be assigned.';chart.innerHTML='<p class="empty-state">No timestamped listening yet.</p>';return;}
+    if(!populated.length){chart.innerHTML='<p class="empty-state">No positive recorded duration in these months.</p>';renderMonthLegend(buckets,legend);status.textContent='The selected date range has timestamped months but no positive recorded duration. Each month is listed as 0 minutes and 0%.';showMonth(buckets[0]);return;}
     const svgNS='http://www.w3.org/2000/svg',svg=root.document.createElementNS(svgNS,'svg');svg.setAttribute('viewBox','0 0 220 220');svg.setAttribute('role','img');svg.setAttribute('aria-label','Donut chart of listening duration by UTC month');
     let cumulative=0;
     populated.forEach((x,i)=>{
@@ -168,9 +169,12 @@
     });
     chart.append(svg);
     const center=root.document.createElement('div');center.className='donut-center';center.innerHTML='<strong>'+hours(total)+'</strong><span>DATED TOTAL</span>';chart.append(center);
-    populated.forEach((x,i)=>{const button=root.document.createElement('button');button.type='button';button.className='month-legend-item';button.innerHTML='<span class="legend-swatch" style="--swatch:'+colors[i%colors.length]+'"></span><span>'+escapeHTML(x.label)+'</span><strong>'+minutes(x.ms)+'</strong><small>'+number(x.share*100)+'%</small>';button.addEventListener('click',()=>showMonth(x));legend.append(button);});
-    status.textContent=populated.length+' months with positive recorded duration. Percentages use only timestamped positive listening duration in the displayed months. Months with zero listening remain in the selected range but are omitted from the donut segments.';
-    showMonth(populated[0]);
+    renderMonthLegend(buckets,legend);
+    status.textContent=populated.length+' of '+buckets.length+' months have positive recorded duration. Every month in the selected date span appears in the legend; zero months have 0 minutes and 0%. Percentages use timestamped duration only.';
+    showMonth(buckets.find(x=>x.ms>0)||buckets[0]);
+  }
+  function renderMonthLegend(buckets,legend){
+    buckets.forEach((x,i)=>{const button=root.document.createElement('button');button.type='button';button.className='month-legend-item';button.innerHTML='<span class="legend-swatch" style="--swatch:'+colors[i%colors.length]+'"></span><span>'+escapeHTML(x.label)+'</span><strong>'+minutes(x.ms)+'</strong><small>'+number(x.share*100)+'%</small>';button.addEventListener('click',()=>showMonth(x));legend.append(button);});
   }
   function showMonth(x){const el=$('monthDetail');if(el)el.textContent=x.label+' · '+minutes(x.ms)+' recorded · '+number(x.share*100)+'% of dated duration';}
   function polar(cx,cy,r,angle){const a=(angle-90)*Math.PI/180;return {x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};}
