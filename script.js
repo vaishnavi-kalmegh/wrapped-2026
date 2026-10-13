@@ -88,7 +88,7 @@ function rowsOf(x){return WrappedAnalytics.rowsOf(x)}
 async function loadFiles(files){
  const results=[];
  for(const f of [...files]){
-  try{results.push({name:f.name,data:JSON.parse(await f.text())})}
+  try{results.push({name:f.name,size:f.size,lastModified:f.lastModified,data:JSON.parse(await f.text())})}
   catch{results.push({name:f.name,error:'Invalid JSON or unreadable file'})}
  }
  const parsed=WrappedAnalytics.inspectFiles(results);
