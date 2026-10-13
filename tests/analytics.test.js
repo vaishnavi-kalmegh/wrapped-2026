@@ -411,3 +411,29 @@ test('Story Mode preserves long titles and Unicode punctuation for safe card wra
   assert.ok(x.stories.find(s=>s.type==='tracks').list[0].includes(title));
   assert.ok(x.stories.find(s=>s.type==='tracks').list[0].includes(artist));
 });
+
+
+test('Story Mode identity labels follow documented thresholds and omit unsupported labels', () => {
+  const range=custom('2026-01-01','2026-12-31');
+  const loopRows=[];
+  for(let i=0;i<3;i++)loopRows.push(row('2026-01-01T00:00:0'+i+'Z','Loop Track','Artist',40000));
+  for(let i=0;i<7;i++)loopRows.push(row('2026-01-02T00:00:0'+i+'Z','Other '+i,'Artist',40000));
+  const loop=A.buildStory(loopRows,{range});
+  assert.equal(loop.stories.find(s=>s.type==='identity').title,'The Loop Architect');
+  assert.match(loop.stories.find(s=>s.type==='identity').body,/20% or more/);
+
+  const deepRows=[];
+  for(let i=0;i<20;i++)deepRows.push(row('2026-02-'+String(i+1).padStart(2,'0')+'T00:00:00Z','Catalog '+i,'Artist',40000));
+  const deep=A.buildStory(deepRows,{range});
+  assert.equal(deep.stories.find(s=>s.type==='identity').title,'The Deep-Catalog Drifter');
+  assert.match(deep.stories.find(s=>s.type==='identity').body,/20 or more qualifying track groups/);
+
+  const steadyRows=[];
+  for(let day=1;day<=5;day++){
+    steadyRows.push(row('2026-03-'+String(day).padStart(2,'0')+'T01:00:00Z','Daily '+day+' A','Artist',40000));
+    steadyRows.push(row('2026-03-'+String(day).padStart(2,'0')+'T02:00:00Z','Daily '+day+' B','Artist',40000));
+  }
+  const steady=A.buildStory(steadyRows,{range});
+  assert.equal(steady.stories.find(s=>s.type==='identity').title,'The Steady Signal');
+  assert.match(steady.stories.find(s=>s.type==='identity').body,/5 consecutive active UTC dates/);
+});
