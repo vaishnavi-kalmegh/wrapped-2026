@@ -393,18 +393,18 @@ test('Story Mode excludes undated rows from bounded dates and handles UTC midnig
   assert.equal(x.summary.total,50000);
   assert.equal(x.summary.plays,1);
   assert.equal(x.stories.find(s=>s.type==='peak-day').title,'2026-01-02 UTC');
-  assert.equal(x.stories.find(s=>s.type==='streak').number,'1');
+  assert.ok(!x.stories.some(s=>s.type==='streak'));
+  assert.ok(!x.stories.some(s=>s.type==='first-observed'));
 });
 
-test('Story Mode labels first-observed tracks as archive observations and discloses incomplete history', () => {
+test('Story Mode omits archive-first discoveries while retaining incomplete-history caveats', () => {
   const rows=[
     row('2026-01-02T00:00:00Z','Later','Artist',40000),
     row('2026-01-01T00:00:00Z','Earliest','Artist',40000)
   ];
   const x=A.buildStory(rows,{range:custom('2026-01-01','2026-12-31'),incomplete:true});
-  const discovery=x.stories.find(s=>s.type==='first-observed');
-  assert.match(discovery.title,/Earliest/);
-  assert.match(discovery.body,/not a claim about your lifetime first listen/i);
+  assert.ok(!x.stories.some(s=>s.type==='first-observed'));
+  assert.ok(!x.stories.some(s=>s.type==='streak'));
   assert.ok(x.stories.every(s=>s.caveat.includes('may be incomplete')));
 });
 
@@ -438,8 +438,8 @@ test('Story Mode identity labels follow documented thresholds and omit unsupport
     steadyRows.push(row('2026-03-'+String(day).padStart(2,'0')+'T02:00:00Z','Daily '+day+' B','Artist',40000));
   }
   const steady=A.buildStory(steadyRows,{range});
-  assert.equal(steady.stories.find(s=>s.type==='identity').title,'The Steady Signal');
-  assert.match(steady.stories.find(s=>s.type==='identity').body,/5 consecutive active UTC dates/);
+  assert.ok(!steady.stories.some(s=>s.type==='identity'),'streak-only identity is retired from Story Mode');
+  assert.ok(!steady.stories.some(s=>s.type==='streak'));
 });
 
 
