@@ -92,3 +92,24 @@ The Insights section adds deterministic milestones for recorded listening minute
 - **Diagnostics:** file/record diagnostics are surfaced from the existing local import parser. Insight computations run in the browser on imported rows and do not persist history.
 
 The Phase 3 regression cases are included in `tests/analytics.test.js` and use synthetic fixtures only.
+
+## Phase 4 reliability and local report export
+
+- Import validation distinguishes unreadable/invalid JSON, unrecognized JSON structures, recognized history arrays containing zero records, rejected non-object records, and accepted records. An empty top-level array or an empty recognized history array is a valid but empty import format; it is not reported as an unknown schema.
+- Duration diagnostics distinguish absent duration fields, malformed or negative duration values (treated as zero), and explicitly recorded zero-millisecond durations. Positive finite recorded durations are used as-is; numeric strings are accepted. These diagnostics do not deduplicate events or infer missing metadata.
+- Re-importing replaces the current session's imported history rather than appending to it. Import tokens prevent an older, slower file-read operation from overwriting a newer import or a reset. Selecting the same file again is possible because the file input is cleared after its File objects are captured.
+- The **Export local CSV report** action creates a downloadable report in the browser for the currently selected range. It includes summary metrics, top qualifying track/artist groups, streaks, concentration shares, definitions and caveats. It does not export raw streaming-history rows and does not send data to a server. If the range is invalid or no history is loaded, it reports that state instead of creating a misleading report.
+- CSV artist play points remain estimates (primary = 1.0, explicitly listed secondary = 0.5). Artist-attributed collaboration durations overlap and must not be summed as mutually exclusive listening time. A zero baseline is never turned into an infinite percentage.
+- Import file parsing and CSV generation remain browser-local. No persistent storage, Spotify API, OAuth, backend, tracking scripts or chart dependencies were added.
+
+The expanded synthetic regression suite covers empty versus unrecognized import structures, malformed/missing/zero duration values, UTC midnight boundaries, undated records, collaboration weighting and overlapping duration, repeated independent parser calls, and safe handling of malformed import inputs. Run the same CI checks from the repository root:
+
+```sh
+node --check analytics.js
+node --check insights.js
+node --check script.js
+node --check dashboard.js
+node --test tests/analytics.test.js
+```
+
+These commands are also run by the existing GitHub Actions workflow on relevant pushes to `main` and pull requests. A successful workflow verifies those commands against synthetic fixtures; it does not replace a browser/mobile smoke test with a real export.
