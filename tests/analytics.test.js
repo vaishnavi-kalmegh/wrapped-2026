@@ -145,3 +145,15 @@ test('detailed dashboard option retains short-only groups for listening-time sor
   assert.equal(detailed.albums.find(a=>a.album==='Short album').plays,0);
   assert.equal(detailed.artists.find(a=>a.name==='Artist').plays,1);
 });
+
+
+test('all-time rankings can include undated track records but date ranges exclude them', () => {
+  const rows=[row('not-a-date','Undated track','Artist',45000),row('2026-01-01T00:00:00Z','Dated track','Artist',50000)];
+  const all=A.summarize(rows,{range:A.dateRange('allTime')});
+  const year=A.summarize(rows,{range:custom('2026-01-01','2026-12-31')});
+  assert.equal(all.tracks.length,2);
+  assert.equal(all.total,95000);
+  assert.equal(year.tracks.length,1);
+  assert.equal(year.tracks[0].name,'Dated track');
+  assert.equal(year.total,50000);
+});
