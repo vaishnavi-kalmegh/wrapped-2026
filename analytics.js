@@ -275,7 +275,7 @@
     const opts = options || {}, range = opts.range || dateRange('allTime');
     const summary = summarize(input, { range, includeUnqualifiedGroups: true, requireTrackAndArtistForDuration: opts.requireTrackAndArtistForDuration === true });
     if (!summary.valid) return { valid: false, error: summary.error, stories: [] };
-    const records = summary.records || [];
+    const records = (summary.records || []).filter(r => opts.requireTrackAndArtistForDuration !== true || (r.track && r.primaryArtist));
     const incomplete = opts.incomplete !== false;
     const caveat = incomplete ? 'Based on the history files selected; the archive may be incomplete.' : 'Based on the history records supplied.';
     const stories = [];
@@ -295,7 +295,7 @@
     const rankedArtists = summary.artists.filter(a => a.plays > 0);
     if (rankedTracks.length) add({
       type:'tracks', eyebrow:'THE TRACK ROTATION', title:'The tracks you returned to.',
-      list:rankedTracks.slice(0,5).map((t,i)=>(i+1)+'. ' + t.name + ' — ' + t.artist + ' · ' + fmt(t.plays) + ' qualifying plays'),
+      list:rankedTracks.slice(0,5).map((t,i)=>(i+1)+'. ' + t.name + ' — ' + t.artist + ' · ' + fmt(t.plays) + ' qualifying ' + (t.plays === 1 ? 'play' : 'plays')),
       body:'Track groups use track name + primary artist. Only events over 30,000 ms count as qualifying plays.'
     });
     if (rankedArtists.length) add({
