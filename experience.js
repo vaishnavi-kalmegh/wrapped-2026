@@ -101,7 +101,7 @@
   function rankingCard(item,rank,type){
     const artist=type==='artist',name=artist?item.name:item.name,sub=artist?number(item.plays)+' estimated play points':item.artist+' · '+number(item.plays)+' qualifying plays';
     const img=artist?item.imageUrl:item.artworkUrl,alt=artist?'Profile image for '+name:'Album artwork for '+name;
-    const image=img?'<img loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
+    const image=img?'<img data-artwork-kind="'+(artist?'artist':'track')+'" loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
     return '<article class="music-card '+(rank<=5?'featured':'')+' '+type+'-card"><div class="music-art">'+image+'<span class="music-rank">'+String(rank).padStart(2,'0')+'</span></div><div class="music-meta"><h3 title="'+escapeHTML(name)+'">'+escapeHTML(name)+'</h3><p>'+escapeHTML(artist?sub:item.artist)+'</p><span class="music-metric">'+escapeHTML(artist?number(item.plays)+' estimated play points':number(item.plays)+' qualifying plays')+'</span></div></article>';
   }
   function visibleRankings(items,limit){const ranked=(items||[]).filter(x=>x&&x.plays>0);return ranked.slice(0,Math.min(50,Math.max(10,Number(limit)||10)));}
@@ -111,32 +111,120 @@
     if(!rows.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>Waiting for your data</h3><p>Import a Spotify history JSON file to rank this section.</p></div>';more.hidden=true;collapse.hidden=true;status.textContent='Import history to calculate rankings.';return;}
     if(!ranked.length){container.innerHTML='<div class="empty-state"><span>✧</span><h3>No qualifying results in this window.</h3><p>There are no track or artist groups with plays over 30 seconds in this range. Try another date window.</p></div>';more.hidden=true;collapse.hidden=true;status.textContent='No qualifying results in this range.';return;}
     container.innerHTML=shown.map((x,i)=>rankingCard(x,i+1,type)).join('');
+    attachArtworkFallbacks(container);
     status.textContent='Showing '+shown.length+' of '+Math.min(50,ranked.length)+' available ranked '+(artist?'artist':'track')+' groups. Rankings use the shared analytics engine.';
     more.hidden=shown.length>=Math.min(50,ranked.length);
     more.textContent='LOAD MORE · '+Math.min(10,Math.min(50,ranked.length)-shown.length)+' NEXT';
     const collapse=$(artist?'artistsCollapse':'tracksCollapse');collapse.hidden=shown.length<=10;
     resolveArtwork(shown.slice(0,5),type);
   }
+  const ARTWORK_SUCCESS_TTL=30*60*1000,ARTWORK_MISS_TTL=5*60*1000,ARTWORK_ERROR_TTL=30*1000;
+  const artworkPending=new Map();
+  function validArtworkUrl(value){
+    if(typeof value!=='string'||!value.trim())return null;
+    try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password?url.href:null;}catch(_){return null;}
+  }
+  function comparisonText(value){
+    return safe(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('en')
+      .replace(/&/g,' and ').replace(/[’‘´]/g,"'").replace(/[\p{P}\p{S}]+/gu,' ').replace(/\s+/g,' ').trim();
+  }
+  function titleVariants(value){
+    const original=comparisonText(value);
+    const noFeatures=original.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim();
+    const withoutEdition=noFeatures.replace(/\b(?:explicit|clean|radio edit|album version|single version|remastered(?: \d{4})?)\b/g,' ').replace(/\s+/g,' ').trim();
+    return [...new Set([original,noFeatures,withoutEdition].filter(Boolean))];
+  }
+  function trackTitleMatch(candidate,requested){
+    const a=titleVariants(candidate),b=titleVariants(requested);
+    return a.some(x=>b.includes(x));
+  }
+  function artistMatch(candidate,requested){
+    const a=comparisonText(candidate),b=comparisonText(requested);
+    if(!a||!b)return false;
+    const baseA=a.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim();
+    const baseB=b.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim();
+    return Boolean(baseA&&baseB&&baseA===baseB);
+  }
+  function albumMatch(candidate,requested){if(!requested)return true;return comparisonText(candidate)===comparisonText(requested);}
+  function findTrackArtwork(results,track,artist,album){
+    if(!Array.isArray(results)||!track||!artist)return null;
+    const candidates=results.map((item,index)=>{
+      if(!item||!trackTitleMatch(item.trackName,track)||!artistMatch(item.artistName,artist)||!albumMatch(item.collectionName,album))return null;
+      const art=validArtworkUrl(item.artworkUrl600)||validArtworkUrl(item.artworkUrl100);
+      if(!art)return null;
+      const exactTitle=comparisonText(item.trackName)===comparisonText(track)?2:0;
+      const exactArtist=comparisonText(item.artistName)===comparisonText(artist)?2:0;
+      const exactAlbum=album&&comparisonText(item.collectionName)===comparisonText(album)?4:0;
+      return {url:art,score:exactTitle+exactArtist+exactAlbum+(validArtworkUrl(item.artworkUrl600)?1:0),index};
+    }).filter(Boolean).sort((a,b)=>b.score-a.score||a.index-b.index);
+    return candidates.length?candidates[0].url:null;
+  }
+  function fetchImplementation(fetcher){
+    if(fetcher)return fetcher;
+    if(root&&typeof root.fetch==='function')return root.fetch.bind(root);
+    if(typeof fetch==='function')return fetch;
+    return null;
+  }
+  async function fetchItunes(term,limit,fetcher){
+    const query=new URLSearchParams({term,entity:'song',limit:String(limit)});
+    const controller=typeof AbortController!=='undefined'?new AbortController():null;
+    const timer=controller?setTimeout(()=>controller.abort(),6500):null;
+    try{
+      const response=await fetcher('https://itunes.apple.com/search?'+query.toString(),{mode:'cors',...(controller?{signal:controller.signal}:{})});
+      if(!response||!response.ok){const error=new Error('Artwork lookup failed'+(response?' (HTTP '+response.status+')':''));if(response)error.status=response.status;throw error;}
+      const data=await response.json();
+      if(!data||!Array.isArray(data.results))throw new Error('Malformed iTunes response');
+      return data.results;
+    }finally{if(timer!==null)clearTimeout(timer);}
+  }
+  async function lookupTrackArtwork(track,artist,album,fetcher){
+    if(!track||!artist)return null;
+    const request=fetchImplementation(fetcher);
+    if(!request)throw new Error('Fetch is unavailable');
+    const first=await fetchItunes('"'+safe(track).trim()+'" '+safe(artist).trim(),25,request);
+    const exact=findTrackArtwork(first,track,artist,album);
+    if(exact)return exact;
+    const second=await fetchItunes(safe(track).trim()+' '+safe(artist).trim(),50,request);
+    return findTrackArtwork(second,track,artist,album);
+  }
+  async function trackArtwork(track,artist,album){return lookupTrackArtwork(track,artist,album);}
+  function cachedArtwork(cacheKey){
+    const entry=artworkCache.get(cacheKey);
+    if(!entry)return {found:false};
+    if(entry.expiresAt>Date.now())return {found:true,url:entry.url};
+    artworkCache.delete(cacheKey);return {found:false};
+  }
+  function attachArtworkFallbacks(container){
+    if(!container)return;
+    container.querySelectorAll('img[data-artwork-kind]').forEach(img=>img.addEventListener('error',()=>{
+      const inCard=Boolean(img.closest('.music-art')),fallback=root.document.createElement(inCard?'div':'span');
+      fallback.className=inCard?'art-fallback '+(img.dataset.artworkKind==='artist'?'artist-fallback':'track-fallback'):'story-item-placeholder';
+      fallback.setAttribute('aria-hidden','true');fallback.textContent=img.dataset.artworkKind==='artist'?'✳':'♫';img.replaceWith(fallback);
+    },{once:true}));
+  }
   function resolveArtwork(items,type){
     if(!$('artworkLookupEnabled')||!$('artworkLookupEnabled').checked){items.forEach(item=>{delete item.imageUrl;delete item.artworkUrl;});return;}
     const token=requestToken[type];
     items.slice(0,5).forEach(item=>{
-      const cacheKey=(type==='artist'?'artist:':'track:')+(type==='artist'?item.name:item.name+'|'+item.artist);
-      if(artworkCache.has(cacheKey)){item[type==='artist'?'imageUrl':'artworkUrl']=artworkCache.get(cacheKey);return;}
-      const task=type==='artist'?artistImage(item.name):trackArtwork(item.name,item.artist);
+      const identity=type==='artist'?item.name:item.name+'|'+item.artist;
+      const cacheKey=(type==='artist'?'artist:':'track:')+identity,cached=cachedArtwork(cacheKey);
+      if(cached.found){item[type==='artist'?'imageUrl':'artworkUrl']=cached.url;return;}
+      if(artworkPending.has(cacheKey))return;
+      const task=type==='artist'?artistImage(item.name):trackArtwork(item.name,item.artist,item.album);
+      artworkPending.set(cacheKey,task);
       task.then(url=>{
         if(token!==requestToken[type])return;
-        artworkCache.set(cacheKey,url||null);
+        artworkCache.set(cacheKey,{url:url||null,expiresAt:Date.now()+(url?ARTWORK_SUCCESS_TTL:ARTWORK_MISS_TTL)});
         if(!url||!$('artworkLookupEnabled')?.checked)return;
         item[type==='artist'?'imageUrl':'artworkUrl']=url;
-        const limit=type==='artist'?artistLimit:trackLimit;
-        const visible=(type==='artist'?summary?.artists:summary?.tracks)||[];
-        const index=visible.findIndex(x=>key(type==='artist'?x.name:x.name+'|'+x.artist)===key(type==='artist'?item.name:item.name+'|'+item.artist));
+        const limit=type==='artist'?artistLimit:trackLimit,visible=(type==='artist'?summary?.artists:summary?.tracks)||[];
+        const index=visible.findIndex(x=>key(type==='artist'?x.name:x.name+'|'+x.artist)===key(identity));
         if(index>=0&&index<Math.min(5,limit)){renderRanks(type);renderStory();}
-      }).catch(()=>{});
+      }).catch(()=>{
+        if(token===requestToken[type])artworkCache.set(cacheKey,{url:null,expiresAt:Date.now()+ARTWORK_ERROR_TTL});
+      }).finally(()=>{if(artworkPending.get(cacheKey)===task)artworkPending.delete(cacheKey);});
     });
   }
-  function findTrackArtwork(results,track,artist){const match=(results||[]).find(x=>key(x.trackName)===key(track)&&key(x.artistName)===key(artist)&&(x.artworkUrl600||x.artworkUrl100));return match?(match.artworkUrl600||match.artworkUrl100):null;}
   function isExactArtistPage(title,name){return Boolean(title&&name&&key(title)===key(name));}
   async function trackArtwork(track,artist){
     const query=new URLSearchParams({term:track+' '+artist,entity:'song',limit:'8'});
@@ -224,12 +312,13 @@
     if(!slide)return;
     const items=slide.items||[];
     const theme=root.document.documentElement.dataset.theme,storyLabels=theme==='y2k'?{lore:'THE LORE DROP ✨',artists:'YOUR RIDE-OR-DIES',tracks:'THE BOPS ON REPEAT',duration:'MAIN-CHARACTER STATS',month:'YOUR MONTHLY ERA',hour:'THE CLOCKED-IN HOURS',closing:'THE FINAL TEA ✧',empty:'NO RECEIPTS, NO CLAIMS'}:theme==='futuristic'?{lore:'ARCHIVE SIGNAL // LORE',artists:'ARTIST NODES',tracks:'TRACK FREQUENCY',duration:'RECORDED DURATION',month:'MONTHLY DISTRIBUTION',hour:'HOURLY SIGNAL',closing:'SEQUENCE COMPLETE',empty:'NO DATA // NO CLAIM'}:{lore:'LISTENING LORE',artists:'TOP ARTISTS',tracks:'TOP SONGS',duration:'LISTENING NUMBERS',month:'MONTHLY SIGNAL',hour:'24-HOUR MIX',closing:'THE FINAL RECEIPT',empty:'NO MATCHING RECORDS'};
-    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
+    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img data-artwork-kind="'+(slide.type==='tracks'?'track':'artist')+'" class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
     $('storyStep').textContent='STORY '+(slideIndex+1)+' / '+slideList.length;
     $('storyProgress').innerHTML=slideList.map((x,i)=>'<span class="'+(i<=slideIndex?'active':'')+'"></span>').join('');
     $('storyProgress').setAttribute('aria-valuenow',String(slideIndex+1));$('storyProgress').setAttribute('aria-valuemax',String(slideList.length));
     $('storyPrevious').disabled=slideIndex===0;$('storyNext').disabled=slideIndex>=slideList.length-1;
     viewer.setAttribute('aria-label','Story slide '+(slideIndex+1)+' of '+slideList.length+': '+slide.title);
+    attachArtworkFallbacks($('storyCard'));
   }
   function openStory(){const v=$('storyViewer');v.hidden=false;root.document.body.classList.add('story-open');$('storyClose').focus();renderStory();}
   function closeStory(){const v=$('storyViewer');v.hidden=true;root.document.body.classList.remove('story-open');$('storyOpen').focus();}
@@ -288,5 +377,5 @@
     update();
   }
   if(root.document){if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',init);else init();}
-  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,rangeFor,escapeHTML,visibleRankings,findTrackArtwork,isExactArtistPage};
+  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,rangeFor,escapeHTML,visibleRankings,findTrackArtwork,isExactArtistPage,lookupTrackArtwork,trackTitleMatch,artistMatch,validArtworkUrl};
 });
