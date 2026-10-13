@@ -7,8 +7,8 @@
   'use strict';
   const $=id=>root.document&&root.document.getElementById(id);
   const number=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:1}).format(n||0);
-  const minutes=ms=>{const m=Math.floor((ms||0)/60000);if(m<60)return number(m)+' min';const h=Math.floor(m/60),r=m%60;return h+'h '+r+'m';};
-  const hours=ms=>(Math.max(0,ms||0)/3600000).toFixed(1)+' h';
+  const minutes=ms=>{const seconds=Math.floor(Math.max(0,ms||0)/1000);if(seconds<60)return seconds+' sec';const m=Math.floor(seconds/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+'h '+r+'m';};
+  const hours=ms=>{const value=Math.max(0,ms||0);if(value<60000)return Math.round(value/1000)+' sec';if(value<3600000)return Math.floor(value/60000)+' min';return (value/3600000).toFixed(1)+' h';};
   const safe=(s)=>String(s==null?'':s);
   const key=s=>safe(s).normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g,' ');
   const escapeHTML=s=>safe(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -28,8 +28,9 @@
     if(!summary||!summary.valid)return [];
     const records=summary.records||[],dated=records.filter(r=>r.timestamp!=null);
     if(!dated.length)return [];
-    const startMs=range&&range.start!=null?range.start:Math.min(...dated.map(r=>r.timestamp));
-    const endMs=range&&range.end!=null?range.end:Math.max(...dated.map(r=>r.timestamp));
+    const minTimestamp=dated.reduce((m,r)=>Math.min(m,r.timestamp),Infinity),maxTimestamp=dated.reduce((m,r)=>Math.max(m,r.timestamp),-Infinity);
+    const startMs=range&&range.start!=null?range.start:minTimestamp;
+    const endMs=range&&range.end!=null?range.end:maxTimestamp;
     const start=new Date(startMs),end=new Date(endMs),cursor=Date.UTC(start.getUTCFullYear(),start.getUTCMonth(),1),last=Date.UTC(end.getUTCFullYear(),end.getUTCMonth(),1);
     const map=summary.monthsByYear instanceof Map?summary.monthsByYear:new Map();
     const out=[];
@@ -56,7 +57,9 @@
     return {days:out,first,last};
   }
   function loreFor(summary){
-    if(!summary||!summary.valid||!summary.records.length)return {title:'Your archive is waiting.',body:'Import your Spotify history to reveal the patterns your records actually support.',kind:'empty',basis:'No listening claims are made before records are imported.'};
+    if(!summary||!summary.valid)return {title:'Your range needs a second look.',body:'Choose valid dates to calculate this listening story.',kind:'empty',basis:'Invalid ranges do not produce listening claims.'};
+    if(!summary.records.length&&summary.diagnostics&&summary.diagnostics.inputRecords>0)return {title:'No receipts in this window.',body:'Imported history contains no eligible music records in the selected date range. Try another listening window.',kind:'empty',basis:'Date-bounded ranges exclude records without valid timestamps.'};
+    if(!summary.records.length)return {title:'Your archive is waiting.',body:'Import your Spotify history to reveal the patterns your records actually support.',kind:'empty',basis:'No listening claims are made before records are imported.'};
     const tracks=summary.tracks.filter(t=>t.plays>0),artists=summary.artists.filter(a=>a.plays>0),plays=summary.plays;
     if(!plays)return {title:'The quiet before the data.',body:'This range has recorded duration, but no qualifying plays over 30 seconds to rank tracks or artists.',kind:'duration',basis:'Short events count toward recorded listening time; a qualifying play must exceed 30,000 ms.'};
     const top=tracks[0],topShare=top?top.plays/plays:0;
@@ -170,7 +173,7 @@
       circle.addEventListener('mouseenter',()=>showMonth(x));circle.addEventListener('focus',()=>showMonth(x));circle.addEventListener('click',()=>showMonth(x));svg.append(circle);cumulative+=segment;
     });
     chart.append(svg);
-    const center=root.document.createElement('div');center.className='donut-center';center.innerHTML='<strong>'+hours(total)+'</strong><span>DATED TOTAL</span>';chart.append(center);
+    const center=root.document.createElement('div');center.className='donut-center';center.innerHTML='<strong>'+minutes(total)+'</strong><span>DATED TOTAL</span>';chart.append(center);
     renderMonthLegend(buckets,legend);
     status.textContent=populated.length+' of '+buckets.length+' months have positive recorded duration. Every month in the selected date span appears in the legend; zero months have 0 minutes and 0%. Percentages use timestamped duration only.';
     showMonth(buckets.find(x=>x.ms>0)||buckets[0]);
@@ -229,7 +232,7 @@
   function closeStory(){const v=$('storyViewer');v.hidden=true;root.document.body.classList.remove('story-open');$('storyOpen').focus();}
   function wrapText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
     const words=safe(text).split(/\s+/),lines=[];let line='';
-    words.forEach(word=>{const candidate=line?line+' '+word:word;if(ctx.measureText(candidate).width<=maxWidth){line=candidate;return;}if(line)lines.push(line);line=word;while(ctx.measureText(line).width>maxWidth&&line.length>1){let cut=line.length;while(cut>1&&ctx.measureText(line.slice(0,cut)).width>maxWidth)cut--;lines.push(line.slice(0,cut));line=line.slice(cut);}});
+    words.forEach(word=>{const candidate=line?line+' '+word:word;if(ctx.measureText(candidate).width<=maxWidth){line=candidate;return;}if(line)lines.push(line);line=word;while(ctx.measureText(line).width>maxWidth&&Array.from(line).length>1){const chars=Array.from(line);let cut=chars.length;while(cut>1&&ctx.measureText(chars.slice(0,cut).join('')).width>maxWidth)cut--;lines.push(chars.slice(0,cut).join(''));line=chars.slice(cut).join('');}});
     if(line)lines.push(line);const shown=lines.slice(0,maxLines);if(lines.length>maxLines&&shown.length)shown[shown.length-1]=shown[shown.length-1].replace(/[.…]*$/,'')+'…';
     shown.forEach((s,i)=>ctx.fillText(s,x,y+i*lineHeight));return y+shown.length*lineHeight;
   }
