@@ -129,10 +129,10 @@
       .replace(/&/g,' and ').replace(/[’‘´]/g,"'").replace(/[\p{P}\p{S}]+/gu,' ').replace(/\s+/g,' ').trim();
   }
   function titleVariants(value){
-    const original=comparisonText(value);
-    const noFeatures=original.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim();
-    const withoutEdition=noFeatures.replace(/\b(?:explicit|clean|radio edit|album version|single version|remastered(?: \d{4})?)\b/g,' ').replace(/\s+/g,' ').trim();
-    return [...new Set([original,noFeatures,withoutEdition].filter(Boolean))];
+    const raw=safe(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('en');
+    const editionCleaned=raw.replace(/[\[(]\s*(?:explicit|clean|radio edit|album version|single version|remastered(?:\s+\d{4})?)\s*[\])]/g,' ');
+    const variants=[comparisonText(raw),comparisonText(raw.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim()),comparisonText(editionCleaned),comparisonText(editionCleaned.replace(/\b(?:feat|featuring|ft)\b.*$/,'').trim())];
+    return [...new Set(variants.filter(Boolean))];
   }
   function trackTitleMatch(candidate,requested){
     const a=titleVariants(candidate),b=titleVariants(requested);
