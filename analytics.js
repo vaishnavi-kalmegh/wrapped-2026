@@ -159,10 +159,11 @@
       const qualifies = r.durationMs > 30000;
       if (qualifies) { plays++; rankedEvents++; artistNames.add(r.primaryArtist); }
       const trackKey = r.track.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase();
-      const track = tm.get(trackKey) || { name: r.track, artist: r.primaryArtist, plays: 0, ms: 0, albumNames: new Set() };
+      const track = tm.get(trackKey) || { name: r.track, artist: r.primaryArtist, plays: 0, ms: 0, albumNames: new Set(), artistNames: new Set([r.primaryArtist]) };
       track.ms += r.durationMs;
       if (qualifies) track.plays++;
       if (r.album) track.albumNames.add(r.album);
+      r.secondaryArtists.forEach(a => track.artistNames.add(a));
       tm.set(trackKey, track);
       add(am, r.primaryArtist.toLocaleLowerCase(), r.primaryArtist, r.durationMs, 1, qualifies);
       r.secondaryArtists.forEach(a => { if (qualifies) artistNames.add(a); add(am, a.toLocaleLowerCase(), a, r.durationMs, 0.5, qualifies); });
@@ -174,7 +175,7 @@
         albums.set(albumKey, entry);
       }
     }
-    const tracks = [...tm.values()].filter(t=>opts.includeUnqualifiedGroups || t.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
+    const tracks = [...tm.values()].filter(t=>opts.includeUnqualifiedGroups || t.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], artistNames:[...t.artistNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
     const artists = [...am.values()].filter(a=>opts.includeUnqualifiedGroups || a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name));
     const albumRankings = [...albums.values()].filter(a=>opts.includeUnqualifiedGroups || a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.album.localeCompare(b.album));
     const maxDay = [...days.entries()].sort((a,b)=>b[1]-a[1])[0] || null;
