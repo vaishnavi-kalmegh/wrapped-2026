@@ -133,36 +133,52 @@
     const requestedRange = opts.range || null;
     if (requestedRange && requestedRange.valid === false) return { valid: false, error: requestedRange.error, diagnostics: normalized.diagnostics };
     const records = normalized.records.filter(r => inRange(r, requestedRange) && !r.isNonMusic);
-    const tm = new Map(), am = new Map(), albums = new Map(), artistNames = new Set(), days = new Map(), months = Array(12).fill(0), hours = Array(24).fill(0);
-    let total = 0, plays = 0, events = 0, rankedEvents = 0, undatedDuration = 0;
-    const add = (map, key, ms, weight) => { const v = map.get(key) || { plays: 0, ms: 0 }; v.plays += weight; v.ms += ms; map.set(key, v); };
+    const tm = new Map(), am = new Map(), albums = new Map(), artistNames = new Set(), days = new Map(), months = Array(12).fill(0), monthsByYear = new Map(), hours = Array(24).fill(0);
+    let total = 0, plays = 0, events = 0, rankedEvents = 0, undatedDuration = 0, timestampedRecords = 0, durationRecords = 0;
+    const add = (map, key, label, ms, weight, qualifies) => {
+      const v = map.get(key) || { name: label, plays: 0, ms: 0 };
+      v.ms += ms;
+      if (qualifies) v.plays += weight;
+      map.set(key, v);
+    };
     for (const r of records) {
       if (opts.requireTrackAndArtistForDuration && (!r.track || !r.primaryArtist)) continue;
       total += r.durationMs;
+      if (r.durationMs > 0) durationRecords++;
       if (r.timestamp == null) undatedDuration += r.durationMs;
       if (r.timestamp != null) {
-        const d = new Date(r.timestamp), day = d.toISOString().slice(0, 10);
+        timestampedRecords++;
+        const d = new Date(r.timestamp), day = d.toISOString().slice(0, 10), monthKey = day.slice(0, 7);
         days.set(day, (days.get(day) || 0) + r.durationMs);
         months[d.getUTCMonth()] += r.durationMs;
+        monthsByYear.set(monthKey, (monthsByYear.get(monthKey) || 0) + r.durationMs);
         hours[d.getUTCHours()] += r.durationMs;
       }
       if ((requestedRange && r.timestamp == null) || !r.track || !r.primaryArtist) continue;
       events++;
-      if (r.durationMs > 30000) {
-        plays++; rankedEvents++;
-        const trackKey = r.track.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase();
-        const track = tm.get(trackKey) || { name: r.track, artist: r.primaryArtist, plays: 0, ms: 0, albumNames: new Set() };
-        track.plays++; track.ms += r.durationMs; if (r.album) track.albumNames.add(r.album); tm.set(trackKey, track);
-        artistNames.add(r.primaryArtist); add(am, r.primaryArtist, r.durationMs, 1);
-        r.secondaryArtists.forEach(a => { artistNames.add(a); add(am, a, r.durationMs, 0.5); });
-        if (r.album) add(albums, r.album.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase(), r.durationMs, 1);
+      const qualifies = r.durationMs > 30000;
+      if (qualifies) { plays++; rankedEvents++; artistNames.add(r.primaryArtist); }
+      const trackKey = r.track.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase();
+      const track = tm.get(trackKey) || { name: r.track, artist: r.primaryArtist, plays: 0, ms: 0, albumNames: new Set() };
+      track.ms += r.durationMs;
+      if (qualifies) track.plays++;
+      if (r.album) track.albumNames.add(r.album);
+      tm.set(trackKey, track);
+      add(am, r.primaryArtist.toLocaleLowerCase(), r.primaryArtist, r.durationMs, 1, qualifies);
+      r.secondaryArtists.forEach(a => add(am, a.toLocaleLowerCase(), a, r.durationMs, 0.5, qualifies));
+      if (r.album) {
+        const albumKey = r.album.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase();
+        const entry = albums.get(albumKey) || { album: r.album, artist: r.primaryArtist, plays: 0, ms: 0 };
+        entry.ms += r.durationMs;
+        if (qualifies) entry.plays++;
+        albums.set(albumKey, entry);
       }
     }
-    const tracks = [...tm.values()].sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
-    const artists = [...am.entries()].map(([name,v])=>({name,...v})).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name));
-    const albumRankings = [...albums.entries()].map(([key,v])=>{const [album,artist]=key.split('\u0000');return {album,artist,...v}}).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.album.localeCompare(b.album));
+    const tracks = [...tm.values()].filter(t=>t.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
+    const artists = [...am.values()].filter(a=>a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name));
+    const albumRankings = [...albums.values()].filter(a=>a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.album.localeCompare(b.album));
     const maxDay = [...days.entries()].sort((a,b)=>b[1]-a[1])[0] || null;
-    return { valid:true, range:requestedRange || {valid:true,kind:'allTime',start:null,end:null,label:'All time'}, records, tracks, artists, albums:albumRankings, artistNames, days, months, hours, total, plays, events, rankedEvents, activeDays:days.size, maxDay, maxMonth:months.indexOf(Math.max(...months)), undatedDuration, diagnostics:normalized.diagnostics };
+    return { valid:true, range:requestedRange || {valid:true,kind:'allTime',start:null,end:null,label:'All time'}, records, tracks, artists, albums:albumRankings, artistNames, days, months, monthsByYear, hours, total, plays, events, rankedEvents, activeDays:days.size, maxDay, maxMonth:months.indexOf(Math.max(...months)), undatedDuration, timestampedRecords, durationRecords, diagnostics:normalized.diagnostics };
   }
   function inspectFiles(fileResults) {
     const diagnostics = { filesSelected: fileResults.length, filesParsed: 0, invalidFiles: [], emptyFiles: [], acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
@@ -180,5 +196,14 @@
     if (diagnostics.emptyFiles.length) diagnostics.warnings.push(diagnostics.emptyFiles.length + ' file(s) had no recognized history array.');
     return { rows, diagnostics };
   }
-  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles };
+  function sortEvents(records, direction) {
+    const sign = direction === 'asc' ? 1 : -1;
+    return [...(Array.isArray(records) ? records : [])].sort((a,b) => {
+      if (a.timestamp == null && b.timestamp == null) return (a.index ?? 0) - (b.index ?? 0);
+      if (a.timestamp == null) return 1;
+      if (b.timestamp == null) return -1;
+      return sign * (a.timestamp - b.timestamp) || (a.index ?? 0) - (b.index ?? 0);
+    });
+  }
+  return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents };
 });
