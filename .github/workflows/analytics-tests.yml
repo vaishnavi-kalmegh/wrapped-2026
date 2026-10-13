@@ -7,6 +7,7 @@ on:
       - 'insights.js'
       - 'script.js'
       - 'dashboard.js'
+      - 'experience.js'
       - 'index.html'
       - 'styles.css'
       - 'tests/**'
@@ -34,4 +35,5 @@ jobs:
       - run: node --check insights.js
       - run: node --check script.js
       - run: node --check dashboard.js
+      - run: node --check experience.js
       - run: node --test tests/analytics.test.js
