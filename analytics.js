@@ -275,7 +275,7 @@
     const a=summarize(input,{range:rangeA,includeUnqualifiedGroups:true}),b=summarize(input,{range:rangeB,includeUnqualifiedGroups:true});
     if(!a.valid||!b.valid)return {valid:false,error:a.error||b.error};
     const metrics=[['listeningMs',a.total,b.total],['qualifyingPlays',a.plays,b.plays],['activeDays',a.activeDays,b.activeDays],['trackGroups',a.tracks.length,b.tracks.length],['artistGroups',a.artists.length,b.artists.length]];
-    return {valid:true,a:{range:a.range,summary:a},b:{range:b.range,summary:b},metrics:metrics.map(([key,previous,current])=>({key,a:previous,b:current,delta:current-previous,changePercent:previous===0?(current===0?0:null):(current-previous)/previous*100}))};
+    return {valid:true,a:{range:a.range,summary:a},b:{range:b.range,summary:b},metrics:metrics.map(([key,previous,current])=>({key,a:previous,b:current,delta:current-previous,changePercent:previous===0?null:(current-previous)/previous*100}))};
   }
   return { rowsOf, parseTimestamp, normalizeRecord, normalizeRecords, dateRange, inRange, summarize, inspectFiles, sortEvents, milestoneBadges, listeningStreaks, firstObserved, artistConcentration, comparePeriods };
 });
