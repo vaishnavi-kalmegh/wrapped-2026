@@ -565,8 +565,13 @@ test('Phase 6 story-first navigation, portrait export, keyboard, mobile and redu
   const root=path.join(__dirname,'..');
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const script=fs.readFileSync(path.join(root,'experience.js'),'utf8');
+  const analytics=fs.readFileSync(path.join(root,'analytics.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
   const visible=html.split('<div class="legacy-interface" hidden aria-hidden="true">')[0];
+  const allIds=[...html.matchAll(/\\bid="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(new Set(allIds).size,allIds.length,'HTML IDs must be unique');
+  assert.ok(!analytics.includes("type:'streak'"));
+  assert.ok(!analytics.includes("type:'first-observed'"));
   const order=['id="loreCard"','id="artistCards"','id="trackCards"','id="numbersHeading"','id="patternsHeading"','id="fullStoryHeading"'];
   let last=-1;
   for(const token of order){const pos=visible.indexOf(token);assert.ok(pos>last,token+' should appear in story-first order');last=pos;}
