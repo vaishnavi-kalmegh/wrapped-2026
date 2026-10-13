@@ -331,3 +331,83 @@ test('timestamp parsing rejects implicit JavaScript coercions but accepts valid 
   assert.equal(A.parseTimestamp('1767225600'),Date.UTC(2026,0,1));
   assert.equal(A.parseTimestamp('2026-01-01T00:00:00Z'),Date.UTC(2026,0,1));
 });
+
+
+test('Story Mode returns a truthful empty state for empty and malformed inputs', () => {
+  const empty=A.buildStory(null,{range:custom('2026-01-01','2026-12-31')});
+  assert.equal(empty.valid,true);
+  assert.equal(empty.empty,true);
+  assert.equal(empty.stories.length,1);
+  assert.match(empty.stories[0].title,/No story/);
+  const invalid=A.buildStory([row('2026-01-01T00:00:00Z','Track','Artist',40000)],{range:{valid:false,error:'Invalid date range'}});
+  assert.equal(invalid.valid,false);
+  assert.equal(invalid.stories.length,0);
+});
+
+test('Story Mode handles one qualifying track and one artist without inventing repeat patterns', () => {
+  const range=custom('2026-01-01','2026-12-31');
+  const x=A.buildStory([row('2026-01-01T23:59:59Z','Solo Track','Solo Artist',40000)],{range});
+  const tracks=x.stories.find(s=>s.type==='tracks');
+  const artists=x.stories.find(s=>s.type==='artists');
+  assert.equal(x.summary.plays,1);
+  assert.equal(tracks.list.length,1);
+  assert.match(tracks.list[0],/Solo Track — Solo Artist · 1 qualifying plays/);
+  assert.match(artists.list[0],/Solo Artist — 1 estimated play points/);
+  assert.equal(x.stories.some(s=>s.type==='repeat'),false);
+  assert.equal(x.stories.some(s=>s.type==='identity'),false);
+});
+
+test('Story Mode repeat story counts qualifying plays while duration includes short events', () => {
+  const rows=[
+    row('2026-01-01T23:59:59Z','Repeat Song','Artist',45000),
+    row('2026-01-02T00:00:00Z','Repeat Song','Artist',40000),
+    row('2026-01-02T12:00:00Z','Repeat Song','Artist',10000)
+  ];
+  const x=A.buildStory(rows,{range:custom('2026-01-01','2026-12-31')});
+  assert.equal(x.summary.total,95000);
+  assert.equal(x.summary.plays,2);
+  assert.match(x.stories.find(s=>s.type==='repeat').body,/2 qualifying plays \(100%/);
+});
+
+test('Story Mode shows estimated collaboration points and never sums overlapping artist time', () => {
+  const rows=[row('2026-01-01T00:00:00Z','Duet','Lead',60000,{featured_artists:['Guest']})];
+  const x=A.buildStory(rows,{range:custom('2026-01-01','2026-12-31')});
+  const artists=x.stories.find(s=>s.type==='artists');
+  assert.equal(x.summary.total,60000);
+  assert.match(artists.list.join(' '),/Lead — 1 estimated play points/);
+  assert.match(artists.list.join(' '),/Guest — 0.5 estimated play points/);
+  assert.match(artists.body,/durations overlap/);
+});
+
+test('Story Mode excludes undated rows from bounded dates and handles UTC midnight peaks', () => {
+  const rows=[
+    row('invalid','Undated','Artist',90000),
+    row('2026-01-01T23:59:59.999Z','Before','Artist',40000),
+    row('2026-01-02T00:00:00.000Z','At midnight','Artist',50000)
+  ];
+  const x=A.buildStory(rows,{range:custom('2026-01-02','2026-01-02')});
+  assert.equal(x.summary.total,50000);
+  assert.equal(x.summary.plays,1);
+  assert.equal(x.stories.find(s=>s.type==='peak-day').title,'2026-01-02 UTC');
+  assert.equal(x.stories.find(s=>s.type==='streak').number,'1');
+});
+
+test('Story Mode labels first-observed tracks as archive observations and discloses incomplete history', () => {
+  const rows=[
+    row('2026-01-02T00:00:00Z','Later','Artist',40000),
+    row('2026-01-01T00:00:00Z','Earliest','Artist',40000)
+  ];
+  const x=A.buildStory(rows,{range:custom('2026-01-01','2026-12-31'),incomplete:true});
+  const discovery=x.stories.find(s=>s.type==='first-observed');
+  assert.match(discovery.title,/Earliest/);
+  assert.match(discovery.body,/not a claim about your lifetime first listen/i);
+  assert.ok(x.stories.every(s=>s.caveat.includes('may be incomplete')));
+});
+
+test('Story Mode preserves long titles and Unicode punctuation for safe card wrapping', () => {
+  const title='極めて長い曲名 — “✨ Midnight / Signal: (Deluxe Version)” '.repeat(8).trim();
+  const artist='Artist with an exceptionally long name & friends 🎧';
+  const x=A.buildStory([row('2026-01-01T00:00:00Z',title,artist,60000)],{range:custom('2026-01-01','2026-12-31')});
+  assert.ok(x.stories.find(s=>s.type==='tracks').list[0].includes(title));
+  assert.ok(x.stories.find(s=>s.type==='tracks').list[0].includes(artist));
+});
