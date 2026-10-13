@@ -43,7 +43,7 @@ test('same title by different artists stays in separate track groups', () => {
 });
 test('invalid JSON and unexpected structures report diagnostics without crashing', () => {
   const x=A.inspectFiles([{name:'bad.json',error:'Invalid JSON'},{name:'unknown.json',data:{notHistory:{}}},{name:'ok.json',data:[row('2026-01-01T00:00:00Z','OK','A',40000)]}]);
-  assert.equal(x.diagnostics.invalidFiles.length,1); assert.deepEqual(x.diagnostics.emptyFiles,['unknown.json']); assert.equal(x.rows.length,1);
+  assert.equal(x.diagnostics.invalidFiles.length,1); assert.deepEqual(x.diagnostics.unrecognizedFiles,['unknown.json']); assert.deepEqual(x.diagnostics.emptyFiles,[]); assert.equal(x.rows.length,1);
 });
 test('invalid timestamps, missing track/artist metadata and malformed rows are diagnosed', () => {
   const p=A.normalizeRecords([row('not-a-date','No Date','Artist',40000),{ts:'2026-01-01T00:00:00Z',ms_played:70000},null]);
@@ -182,4 +182,85 @@ test('equal-period comparisons handle zero baselines without Infinity',()=>{
 test('insight calculations honor date ranges and exclude marked non-music',()=>{
   const rows=[row('2025-12-31T23:59:59Z','Old','Old Artist',50000),row('2026-01-01T00:00:00Z','Podcast','Narrator',50000,{episode_name:'Podcast'}),row('2026-01-02T00:00:00Z','In range','Artist',45000)],range=custom('2026-01-01','2026-12-31');
   assert.deepEqual(A.listeningStreaks(rows,{range}).dates,['2026-01-02']);assert.equal(A.artistConcentration(rows,{range}).artists.length,1);assert.equal(A.firstObserved(rows,{range}).tracks.length,1);
+});
+
+
+test('recognized empty JSON arrays are distinct from unrecognized structures', () => {
+  const x = A.inspectFiles([
+    {name:'empty.json',data:[]},
+    {name:'empty-export.json',data:{streaming_history:[]}},
+    {name:'unknown.json',data:{notHistory:{}}},
+    {name:'valid.json',data:[row('2026-01-01T00:00:00Z','Valid','Artist',40000)]}
+  ]);
+  assert.equal(x.diagnostics.filesSelected,4);
+  assert.equal(x.diagnostics.filesParsed,3);
+  assert.deepEqual(x.diagnostics.emptyFiles,['empty.json','empty-export.json']);
+  assert.deepEqual(x.diagnostics.unrecognizedFiles,['unknown.json']);
+  assert.equal(x.diagnostics.acceptedRecords,1);
+  assert.equal(x.rows.length,1);
+});
+
+test('missing, malformed, negative and zero durations have separate diagnostics', () => {
+  const p = A.normalizeRecords([
+    {ts:'2026-01-01T00:00:00Z',trackName:'Missing',artistName:'A'},
+    row('2026-01-01T00:01:00Z','Malformed','A','not-a-number'),
+    row('2026-01-01T00:02:00Z','Negative','A',-5),
+    row('2026-01-01T00:03:00Z','Zero','A',0),
+    row('2026-01-01T00:04:00Z','Numeric string','A','30001')
+  ]);
+  assert.equal(p.diagnostics.missingDuration,1);
+  assert.equal(p.diagnostics.invalidDuration,2);
+  assert.equal(p.diagnostics.zeroDuration,1);
+  assert.equal(p.records[1].durationMs,0);
+  assert.equal(p.records[2].durationMs,0);
+  assert.equal(p.records[3].durationMs,0);
+  assert.equal(p.records[4].durationMs,30001);
+  assert.equal(A.summarize(p).total,30001);
+  assert.ok(p.diagnostics.warnings.some(w=>w.includes('malformed or negative duration')));
+});
+
+test('UTC midnight boundaries belong to the correct UTC day and custom date', () => {
+  const rows = [
+    row('2026-01-01T23:59:59.999Z','Before midnight','A',40000),
+    row('2026-01-02T00:00:00.000Z','At midnight','A',50000)
+  ];
+  const s = A.summarize(rows,{range:custom('2026-01-02','2026-01-02')});
+  assert.equal(s.total,50000);
+  assert.deepEqual([...s.days.keys()],['2026-01-02']);
+  assert.equal(A.listeningStreaks(rows).longest.days,2);
+});
+
+test('all-time includes undated duration while bounded date ranges exclude it', () => {
+  const rows = [row('invalid','Undated','A',12000),row('2026-01-01T00:00:00Z','Dated','A',30001)];
+  assert.equal(A.summarize(rows).total,42001);
+  assert.equal(A.summarize(rows,{range:custom('2026-01-01','2026-01-01')}).total,30001);
+  assert.equal(A.summarize(rows,{range:custom('2027-01-01','2027-01-02')}).total,0);
+});
+
+test('collaboration artist durations overlap but play points use documented weights', () => {
+  const s = A.summarize([row('2026-01-01T00:00:00Z','Collab','Lead',60000,{featured_artists:['Guest','Third']})]);
+  assert.equal(s.total,60000);
+  assert.equal(s.plays,1);
+  assert.equal(s.artists.find(a=>a.name==='Lead').plays,1);
+  assert.equal(s.artists.find(a=>a.name==='Guest').plays,0.5);
+  assert.equal(s.artists.find(a=>a.name==='Third').plays,0.5);
+  assert.equal(s.artists.reduce((sum,a)=>sum+a.ms,0),180000);
+  assert.equal(A.artistConcentration([row('2026-01-01T00:00:00Z','Collab','Lead',60000,{featured_artists:['Guest']})]).totalPrimaryArtistMs,60000);
+});
+
+test('malformed file-result inputs return safe empty diagnostics', () => {
+  const x = A.inspectFiles(null);
+  assert.equal(x.rows.length,0);
+  assert.equal(x.diagnostics.filesSelected,0);
+  assert.equal(x.diagnostics.filesParsed,0);
+  assert.equal(A.summarize(null).total,0);
+});
+
+test('repeated independent imports do not accumulate rows inside the parser', () => {
+  const files = [{name:'history.json',data:[row('2026-01-01T00:00:00Z','Only','A',40000)]}];
+  const first = A.inspectFiles(files);
+  const second = A.inspectFiles(files);
+  assert.equal(first.rows.length,1);
+  assert.equal(second.rows.length,1);
+  assert.equal(A.summarize(second.rows).plays,1);
 });
