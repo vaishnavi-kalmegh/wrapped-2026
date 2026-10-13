@@ -286,8 +286,20 @@ $('friendFiles').addEventListener('change',async e=>{
  $('friendStatus').textContent='Processed '+r.count+' file(s) locally; '+fmt(r.diagnostics.acceptedRecords)+' records accepted, '+fmt(r.diagnostics.rejectedRecords)+' rejected, '+fmt(r.diagnostics.invalidDuration||0)+' invalid durations. '+fmt(friend.plays)+' eligible 2026 plays.';
  renderCompare();
 });
-$('storyPrev').addEventListener('click',()=>{if(slideIndex>0){slideIndex--;renderSlide()}});$('storyNext').addEventListener('click',()=>{if(slideIndex<slides.length-1){slideIndex++;renderSlide()}});$('downloadCard').addEventListener('click',downloadCard);
-document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'&&slideIndex<slides.length-1){slideIndex++;renderSlide()}if(e.key==='ArrowLeft'&&slideIndex>0){slideIndex--;renderSlide()}});
+$('storyPrev').addEventListener('click',()=>{if(slideIndex>0){slideIndex--;renderSlide()}});
+$('storyNext').addEventListener('click',()=>{if(slideIndex<slides.length-1){slideIndex++;renderSlide()}});
+$('downloadCard').addEventListener('click',downloadCard);
+$('storyRangeMode').addEventListener('change',buildSlides);
+$('storyExit').addEventListener('click',()=>{$('storyPanel').hidden=true;$('storyLaunch').hidden=false;$('storyLaunch').focus()});
+$('storyLaunch').addEventListener('click',()=>{$('storyLaunch').hidden=true;$('storyPanel').hidden=false;$('storySlide').focus()});
+window.addEventListener('wrapped-range-changed',()=>{if($('storyRangeMode').value==='dashboard')buildSlides()});
+document.addEventListener('keydown',e=>{
+ if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement?.tagName))return;
+ const panel=$('storyPanel');
+ if(!panel||panel.hidden||!panel.contains(document.activeElement))return;
+ if(e.key==='ArrowRight'&&slideIndex<slides.length-1){e.preventDefault();slideIndex++;renderSlide()}
+ if(e.key==='ArrowLeft'&&slideIndex>0){e.preventDefault();slideIndex--;renderSlide()}
+});
 $('analyticsRange').addEventListener('change',()=>{renderLifetimeAnalytics();window.dispatchEvent(new Event('wrapped-range-changed'))});
 $('applyRange').addEventListener('click',()=>{renderLifetimeAnalytics();window.dispatchEvent(new Event('wrapped-range-changed'))});
 $('rangeStart').addEventListener('change',()=>{if($('analyticsRange').value==='custom'){renderLifetimeAnalytics();window.dispatchEvent(new Event('wrapped-range-changed'))}});
