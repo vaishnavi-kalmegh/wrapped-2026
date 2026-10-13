@@ -154,7 +154,7 @@
         monthsByYear.set(monthKey, (monthsByYear.get(monthKey) || 0) + r.durationMs);
         hours[d.getUTCHours()] += r.durationMs;
       }
-      if ((requestedRange && r.timestamp == null) || !r.track || !r.primaryArtist) continue;
+      if ((requestedRange && requestedRange.kind !== 'allTime' && r.timestamp == null) || !r.track || !r.primaryArtist) continue;
       events++;
       const qualifies = r.durationMs > 30000;
       if (qualifies) { plays++; rankedEvents++; artistNames.add(r.primaryArtist); }
