@@ -446,7 +446,7 @@ test('Story Mode UI exposes navigation, accessible status, responsive reduced-mo
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const script=fs.readFileSync(path.join(root,'script.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
-  for(const id of ['storyPanel','storyLaunch','storyExit','storyPrev','storyNext','storyProgress','storySlide','downloadCard','storyRangeMode','includeRangeOnCard','includeMethodOnCard'])assert.ok(html.includes('id="'+id+'"'),id+' control missing');
+  for(const id of ['storyPanel','storyLaunch','storyExit','storyPrev','storyNext','storyProgress','storySlide','downloadCard','storyRangeMode','includeRangeOnCard','includeCalculationNote'])assert.ok(html.includes('id="'+id+'"'),id+' control missing');
   assert.match(html,/aria-live="polite"/);
   assert.match(script,/ArrowRight/);
   assert.match(script,/ArrowLeft/);
