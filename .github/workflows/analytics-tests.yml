@@ -14,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'analytics.js'
+      - 'insights.js'
       - 'script.js'
       - 'dashboard.js'
       - 'index.html'
