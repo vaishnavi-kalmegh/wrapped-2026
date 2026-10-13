@@ -32,6 +32,24 @@ const themeCopy = {
 function applyTheme(theme) {
  document.documentElement.dataset.theme = theme;
  const t = themeCopy[theme] || themeCopy.spotify;
+ const experienceCopy={
+  spotify:{lore:'LISTENING LORE',artists:'Top artists.',artistDesc:'Ranked by estimated play points, not Spotify’s proprietary formula.',tracks:'Top songs.',trackDesc:'Same-title tracks stay separate when their primary artists differ.',numbers:'Your listening numbers.',numbersDesc:'Recorded duration includes short events. Qualifying plays must exceed 30 seconds.',patterns:'Listening patterns.',patternsDesc:'All calendar buckets use UTC. Undated events cannot be placed on these charts.',story:'The full story.',storyDesc:'A sequence of your strongest available signals. No download required to enjoy it.',open:'OPEN FULL STORY ↗',moreArtists:'LOAD MORE ARTISTS',moreTracks:'LOAD MORE SONGS',collapseArtists:'COLLAPSE TO TOP 10',collapseTracks:'COLLAPSE TO TOP 10',previous:'← PREVIOUS',next:'NEXT ↗',exit:'EXIT ✕',save:'SAVE PNG ↓',nav:['Lore','Artists','Songs','Numbers','Patterns','Full story']},
+  y2k:{lore:'THE LORE DROP ✧',artists:'Your ride-or-dies.',artistDesc:'The artists living rent-free in your replay era. Points are estimates, bestie.',tracks:'The bops on repeat.',trackDesc:'Same-title songs by different artists stay in their own lanes, babe.',numbers:'The main-character stats.',numbersDesc:'Short listens count toward time; a qualifying bop must go over 30 seconds.',patterns:'Your listening diary ✨',patternsDesc:'All time stamps are UTC, bestie. Undated listens can’t be pinned to a clock.',story:'Cue the dramatic reveal.',storyDesc:'Your strongest receipts, one slide at a time. Stay for the plot; downloading is optional.',open:'SPILL THE STORY ✨',moreArtists:'MORE RIDE-OR-DIES ✧',moreTracks:'MORE BOPS PLEASE 💿',collapseArtists:'BACK TO TOP 10, BABE',collapseTracks:'BACK TO TOP 10, BABE',previous:'← BACK, BESTIE',next:'NEXT PLOT TWIST ✧',exit:'EXIT THE ERA ✕',save:'SAVE THE SLAY ✨',nav:['The lore','Ride-or-dies','Bops','The stats','The diary','The reveal']},
+  futuristic:{lore:'ARCHIVE SIGNAL // LORE',artists:'Highest-frequency artist nodes.',artistDesc:'Ranked by weighted estimated play points. Proprietary ranking formulas are unavailable.',tracks:'Highest-frequency tracks.',trackDesc:'Track groups retain primary-artist identity; same titles are not merged across artists.',numbers:'Recorded signal metrics.',numbersDesc:'Positive recorded duration includes short events; qualifying events exceed 30,000 ms.',patterns:'Temporal signal analysis.',patternsDesc:'Calendar aggregation uses UTC. Undated events remain outside temporal visualizations.',story:'Review the recap sequence.',storyDesc:'A sequential summary of the strongest supported signals. Export is optional.',open:'INITIALIZE STORY ↗',moreArtists:'LOAD NEXT ARTIST NODES',moreTracks:'LOAD NEXT TRACK GROUPS',collapseArtists:'LIMIT TO TOP 10',collapseTracks:'LIMIT TO TOP 10',previous:'← PREVIOUS FRAME',next:'NEXT FRAME ↗',exit:'CLOSE SEQUENCE ✕',save:'EXPORT FRAME ↓',nav:['Lore signal','Artist nodes','Track nodes','Metrics','Temporal','Sequence']}
+ };
+ const ec=experienceCopy[theme]||experienceCopy.spotify;
+ const setExperience=(selector,value)=>{const el=document.querySelector(selector);if(el)el.textContent=value;};
+ setExperience('.lore-section .section-kicker .eyebrow',ec.lore);
+ setExperience('.lore-card > .eyebrow',ec.lore);
+ setExperience('#artistCardsHeading',ec.artists);setExperience('#artistCardsHeading + p',ec.artistDesc);
+ setExperience('#trackCardsHeading',ec.tracks);setExperience('#trackCardsHeading + p',ec.trackDesc);
+ setExperience('#numbersHeading',ec.numbers);setExperience('#numbersHeading + p',ec.numbersDesc);
+ setExperience('#patternsHeading',ec.patterns);setExperience('#patternsHeading + p',ec.patternsDesc);
+ setExperience('#fullStoryHeading',ec.story);setExperience('#fullStoryHeading + p',ec.storyDesc);
+ setExperience('#storyOpen',ec.open);setExperience('#artistsLoadMore',ec.moreArtists);setExperience('#tracksLoadMore',ec.moreTracks);
+ setExperience('#artistsCollapse',ec.collapseArtists);setExperience('#tracksCollapse',ec.collapseTracks);
+ setExperience('#storyPrevious',ec.previous);setExperience('#storyNext',ec.next);setExperience('#storyClose',ec.exit);setExperience('#storyDownload',ec.save);
+ document.querySelectorAll('.experience-nav a').forEach((el,i)=>{if(ec.nav[i])el.textContent=ec.nav[i]});
  const set=(selector,value)=>{const el=document.querySelector(selector);if(el)el.innerHTML=value};
  set('.hero-copy .eyebrow',t.heroEyebrow); set('.hero-copy h1',t.heroTitle);
  set('.hero-copy .lede',t.heroLede); set('.hero-copy .button-bright',t.heroButton);
@@ -74,7 +92,8 @@ function applyTheme(theme) {
    if(mine) buildSlides();
    else renderSlide();
  }
-}
+  window.dispatchEvent(new CustomEvent('wrapped-theme-updated'));
+ }
 
 const YEAR = 2026, WRAPPED_CUTOFF = Date.UTC(YEAR, 10, 15, 23, 59, 59, 999), fmt = n => new Intl.NumberFormat(undefined, {maximumFractionDigits: 1}).format(n), clean = v => String(v ?? '').trim();
 let mine = null, friend = null, slides = [], slideIndex = 0, myHistoryRows = [], mineImportToken = 0, friendImportToken = 0;
