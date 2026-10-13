@@ -476,3 +476,10 @@ html[data-theme="futuristic"] .number-tile-primary>span,html[data-theme="futuris
 .story-item-art,.story-item-placeholder{width:34px;height:34px;object-fit:cover;border-radius:4px;background:color-mix(in srgb,var(--pink) 24%,var(--panel));color:var(--lime);display:grid;place-items:center}
 .story-list li>div{min-width:0}
 @media(max-width:560px){.story-list li{grid-template-columns:18px 28px minmax(0,1fr)}.story-item-art,.story-item-placeholder{width:28px;height:28px}.story-list li>b{grid-column:3}}
+
+.experience-nav{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px;padding:0 0 12px;border-bottom:1px solid var(--line)}
+.experience-nav a{padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font:10px 'DM Mono',monospace;text-decoration:none}
+.experience-nav a:hover,.experience-nav a:focus-visible{color:var(--ink);border-color:var(--lime);outline:2px solid var(--lime);outline-offset:1px}
+.artwork-privacy{margin-bottom:36px}
+.music-card.featured{border-color:color-mix(in srgb,var(--lime) 38%,var(--line));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--lime) 10%,transparent)}
+@media(max-width:560px){.experience-nav{gap:5px}.experience-nav a{font-size:9px;padding:7px 9px}.artwork-privacy{margin-bottom:30px}}
