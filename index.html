@@ -11,6 +11,7 @@
   <script src="script.js" defer></script>
   <script src="dashboard.js" defer></script>
   <script src="insights.js" defer></script>
+  <script src="experience.js" defer></script>
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
@@ -57,6 +58,68 @@
       <div class="data-actions"><button class="button button-quiet" id="resetData" type="button">RESET MY DATA</button><span class="tiny">Wrapped-style window: Jan 1–Nov 15, 2026 (UTC timestamps; approximate cutoff)</span></div>
     </section>
 
+    <section id="experience" class="experience" aria-label="Personal listening story">
+      <div class="experience-bar">
+        <div><p class="eyebrow">YOUR ARCHIVE, REMIXED</p><p id="experienceStatus" class="experience-status" aria-live="polite">Import history to reveal your personal listening story.</p></div>
+        <div class="experience-range">
+          <label for="experienceRange">LISTENING WINDOW</label>
+          <select id="experienceRange">
+            <option value="allTime">All imported history</option>
+            <option value="thisYear">This UTC year</option>
+            <option value="last12Months">Last 12 months</option>
+            <option value="custom">Custom UTC dates</option>
+          </select>
+          <div id="experienceCustomFields" class="experience-custom" hidden>
+            <label>From <input id="experienceStart" type="date"></label>
+            <label>To <input id="experienceEnd" type="date"></label>
+          </div>
+        </div>
+      </div>
+
+      <section class="lore-section" aria-labelledby="loreHeading">
+        <div class="section-kicker"><span>01</span><p class="eyebrow">LISTENING LORE</p><span class="kicker-line"></span><span id="loreRangeLabel">All time</span></div>
+        <article id="loreCard" class="lore-card"><p class="eyebrow">YOUR LISTENING LORE</p><div class="lore-stamp" aria-hidden="true">✧</div><h2 id="loreHeading">Your archive is waiting.</h2><p>Import your Spotify history to reveal a listening pattern grounded in your actual records.</p></article>
+      </section>
+
+      <section class="experience-section" aria-labelledby="artistCardsHeading">
+        <div class="experience-heading"><div><p class="eyebrow">02 / THE ROTATION</p><h2 id="artistCardsHeading">Top artists<span class="heading-period">.</span></h2><p>Ranked by estimated play points, not Spotify's proprietary formula.</p></div><span class="section-side-note">FIRST FIVE IN THE SPOTLIGHT</span></div>
+        <div id="artistCards" class="music-card-grid artist-card-grid"><div class="empty-state"><span>✳</span><h3>Your artists, front and center.</h3><p>Import history to unlock ranked artist cards.</p></div></div>
+        <div class="rank-controls"><p id="artistCardsStatus" aria-live="polite">Top 10 shown by default; up to 50 available.</p><div><button id="artistsCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 10</button><button id="artistsLoadMore" class="button button-bright" type="button" hidden>LOAD MORE ARTISTS</button></div></div>
+      </section>
+
+      <section class="experience-section" aria-labelledby="trackCardsHeading">
+        <div class="experience-heading"><div><p class="eyebrow">03 / THE SOUNDTRACK</p><h2 id="trackCardsHeading">Top songs<span class="heading-period">.</span></h2><p>Same-title tracks stay separate when their primary artists differ.</p></div><span class="section-side-note">RANKED FROM YOUR HISTORY</span></div>
+        <div id="trackCards" class="music-card-grid track-card-grid"><div class="empty-state"><span>♫</span><h3>The songs that made the cut.</h3><p>Your ranked track cards appear after import.</p></div></div>
+        <div class="rank-controls"><p id="trackCardsStatus" aria-live="polite">Top 10 shown by default; up to 50 available.</p><div><button id="tracksCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 10</button><button id="tracksLoadMore" class="button button-bright" type="button" hidden>LOAD MORE SONGS</button></div></div>
+      </section>
+
+      <section class="experience-section numbers-section" aria-labelledby="numbersHeading">
+        <div class="experience-heading"><div><p class="eyebrow">04 / THE RECEIPTS</p><h2 id="numbersHeading">Your listening numbers<span class="heading-period">.</span></h2><p>Recorded duration includes short events. Qualifying plays must exceed 30 seconds.</p></div><span id="numberRange" class="section-side-note">Selected range</span></div>
+        <div class="numbers-grid">
+          <article class="number-tile number-tile-primary"><span>RECORDED LISTENING</span><strong id="numberTime">—</strong><small>All positive recorded duration</small></article>
+          <article class="number-tile"><span>QUALIFYING PLAYS</span><strong id="numberPlays">—</strong><small>Strictly more than 30,000 ms</small></article>
+          <article class="number-tile"><span>ARTIST NAMES</span><strong id="numberArtists">—</strong><small>With qualifying plays</small></article>
+          <article class="number-tile"><span>TRACK GROUPS</span><strong id="numberTracks">—</strong><small>Track + primary artist</small></article>
+        </div>
+      </section>
+
+      <section class="experience-section patterns-section" aria-labelledby="patternsHeading">
+        <div class="experience-heading"><div><p class="eyebrow">05 / TEMPORAL SIGNAL</p><h2 id="patternsHeading">Listening patterns<span class="heading-period">.</span></h2><p>All calendar buckets use UTC. Undated events can add to All Time duration, but cannot be placed on these charts.</p></div></div>
+        <div class="visualization-grid">
+          <article class="visual-card month-visual-card"><div class="visual-card-head"><div><p class="eyebrow">MONTH BY MONTH</p><h3>Where the time went.</h3></div><span class="visual-index">A / 12</span></div><div class="month-visual"><div id="monthDonut" class="month-donut"><p class="empty-state">Import history to see your monthly distribution.</p></div><div id="monthLegend" class="month-legend"></div></div><p id="monthDetail" class="visual-detail" aria-live="polite">Choose a month to inspect its recorded duration.</p><p id="monthChartStatus" class="visual-note" aria-live="polite">Months are grouped by UTC year and month; percentages use timestamped duration.</p></article>
+          <article class="visual-card clock-visual-card"><div class="visual-card-head"><div><p class="eyebrow">THE 24-HOUR MIX</p><h3>Your listening clock.</h3></div><span class="visual-index">B / UTC</span></div><div class="clock-visual"><div id="hourClock" class="hour-clock"><p class="empty-state">Import history to see hourly activity.</p></div></div><p id="hourDetail" class="visual-detail" aria-live="polite">Choose an hour to inspect its recorded duration.</p><div id="hourLegend" class="hour-legend"></div><p id="hourChartStatus" class="visual-note" aria-live="polite">Each radial segment is one UTC hour; longer bars mean more recorded duration.</p></article>
+        </div>
+        <article class="visual-card heatmap-card"><div class="visual-card-head"><div><p class="eyebrow">DAY BY DAY</p><h3>The listening footprint.</h3></div><span class="visual-index">C / UTC</span></div><div id="experienceHeatmap" class="experience-heatmap"><p class="empty-state">Import history to build your heatmap.</p></div><div id="heatLegend" class="heat-legend experience-heat-legend"><span>Less</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>More</span></div><p id="heatDayDetail" class="visual-detail" aria-live="polite">Select a day to inspect its UTC duration.</p><p class="visual-note">Days with no recorded duration are not proof of no listening: the exported archive may be incomplete. Dates outside the observed timestamp range are not shown.</p></article>
+      </section>
+
+      <section class="experience-section full-story-section" aria-labelledby="fullStoryHeading">
+        <div class="experience-heading"><div><p class="eyebrow">06 / PRESS PLAY</p><h2 id="fullStoryHeading">The full story<span class="heading-period">.</span></h2><p>A sequence of your strongest available signals. No download required to enjoy it.</p></div><button id="storyOpen" class="button button-bright" type="button">OPEN FULL STORY ↗</button></div>
+        <div class="story-teaser"><div class="story-teaser-art" aria-hidden="true"><span>WR</span><i>✳</i><b>01—06</b></div><div><p class="eyebrow">MADE FROM YOUR RECEIPTS</p><h3>One archive. Your listening lore.</h3><p>Move through a full-screen recap, then save any individual card as a 9:16 PNG if you want to share it.</p><p class="tiny">Exported cards always include an incomplete-history caveat. Raw records and account identifiers are never included.</p></div></div>
+      </section>
+      <section class="artwork-privacy"><span aria-hidden="true">↗</span><p><strong>Artwork lookup is optional and external.</strong> To find exact matches, this page sends track title + primary artist to Apple's public iTunes Search API and artist names to Wikipedia's public summary API. It never sends raw history files. If a match is unavailable, the card uses a designed fallback. Block external requests to keep all lookups off.</p></section>
+    </section>
+
+    <div class="legacy-interface" hidden aria-hidden="true">
     <section class="lifetime-section-head">
       <div><p class="eyebrow">THE FULL ARCHIVE</p><h2 id="lifetimeHeading">Your lifetime listening.</h2></div>
       <p>This overview uses the same analytics engine across all imported years. The original Wrapped section below stays locked to its 2026 window.</p>
@@ -212,6 +275,7 @@
       <p>Listening time is the sum of recorded <code>msPlayed</code> / <code>ms_played</code> values for dated track records from Jan 1 through Nov 15, 2026 (UTC; approximate Wrapped cutoff). Top songs count records with more than 30,000 ms played. Artist ranking approximates Spotify's published primary/featured weighting: primary artist = 1.0 point and explicitly listed secondary/featured artists = 0.5 point. Spotify does not publish its exact weights, and many exports do not identify featured artists separately, so artist ranks are estimates—not an exact reproduction of Spotify Wrapped. This export may not expose Private Mode, Taste Profile exclusions, or reliable content-type filtering; the app cannot reproduce those rules. Genre and track popularity are not fabricated.</p>
       <p class="tiny">Story cards are generated locally. No accounts, server, analytics, or data persistence are used by this static app. Unofficial fan-made project, not affiliated with Spotify.</p>
     </section>
+    </div>
   </main>
   <footer><span>WRAPPED.exe © 2026</span><span>BUILT FOR THE PLOT.</span><a href="#data">BACK TO TOP ↑</a></footer>
 </body>
