@@ -174,9 +174,9 @@
         albums.set(albumKey, entry);
       }
     }
-    const tracks = [...tm.values()].filter(t=>t.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
-    const artists = [...am.values()].filter(a=>a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name));
-    const albumRankings = [...albums.values()].filter(a=>a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.album.localeCompare(b.album));
+    const tracks = [...tm.values()].filter(t=>opts.includeUnqualifiedGroups || t.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name)).map(t=>({...t, albumNames:[...t.albumNames], album:t.albumNames.size===1?[...t.albumNames][0]:null}));
+    const artists = [...am.values()].filter(a=>opts.includeUnqualifiedGroups || a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.name.localeCompare(b.name));
+    const albumRankings = [...albums.values()].filter(a=>opts.includeUnqualifiedGroups || a.plays>0).sort((a,b)=>b.plays-a.plays||b.ms-a.ms||a.album.localeCompare(b.album));
     const maxDay = [...days.entries()].sort((a,b)=>b[1]-a[1])[0] || null;
     return { valid:true, range:requestedRange || {valid:true,kind:'allTime',start:null,end:null,label:'All time'}, records, tracks, artists, albums:albumRankings, artistNames, days, months, monthsByYear, hours, total, plays, events, rankedEvents, activeDays:days.size, maxDay, maxMonth:months.indexOf(Math.max(...months)), undatedDuration, timestampedRecords, durationRecords, diagnostics:normalized.diagnostics };
   }
