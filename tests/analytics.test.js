@@ -6,7 +6,7 @@ const row = (ts, trackName, artistName, ms_played, extra = {}) => ({ ts, trackNa
 const custom = (start, end) => A.dateRange('custom', { start, end });
 
 test('single valid file preserves track, album, duration and source fields', () => {
-  const p = A.normalizeRecords([row('2026-01-02T12:00:00Z','Track','Artist',45000,{master_metadata_album_album_name:'Album',shuffle:true})]);
+  const p = A.normalizeRecords([{ts:'2026-01-02T12:00:00Z',master_metadata_track_name:'Track',master_metadata_album_artist_name:'Artist',ms_played:45000,master_metadata_album_album_name:'Album',shuffle:true}]);
   assert.equal(p.diagnostics.acceptedRecords,1); assert.equal(p.records[0].album,'Album'); assert.equal(p.records[0].raw.shuffle,true);
 });
 test('multiple files and years are accepted', () => {
