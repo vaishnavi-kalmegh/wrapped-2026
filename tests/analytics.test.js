@@ -568,7 +568,7 @@ test('Phase 6 story-first navigation, portrait export, keyboard, mobile and redu
   const analytics=fs.readFileSync(path.join(root,'analytics.js'),'utf8');
   const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
   const visible=html.split('<div class="legacy-interface" hidden aria-hidden="true">')[0];
-  const allIds=[...html.matchAll(/\\bid="([^"]+)"/g)].map(m=>m[1]);
+  const allIds=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(new Set(allIds).size,allIds.length,'HTML IDs must be unique');
   assert.ok(!analytics.includes("type:'streak'"));
   assert.ok(!analytics.includes("type:'first-observed'"));
