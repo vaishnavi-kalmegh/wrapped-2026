@@ -290,8 +290,8 @@ $('storyPrev').addEventListener('click',()=>{if(slideIndex>0){slideIndex--;rende
 $('storyNext').addEventListener('click',()=>{if(slideIndex<slides.length-1){slideIndex++;renderSlide()}});
 $('downloadCard').addEventListener('click',downloadCard);
 $('storyRangeMode').addEventListener('change',buildSlides);
-$('storyExit').addEventListener('click',()=>{$('storyPanel').hidden=true;$('storyLaunch').hidden=false;$('storyLaunch').focus()});
-$('storyLaunch').addEventListener('click',()=>{$('storyLaunch').hidden=true;$('storyPanel').hidden=false;$('storySlide').focus()});
+$('storyExit').addEventListener('click',()=>{$('storyPanel').hidden=true;$('storyLaunch').hidden=false;$('storyLaunch').setAttribute('aria-expanded','false');$('storyLaunch').focus()});
+$('storyLaunch').addEventListener('click',()=>{$('storyLaunch').hidden=true;$('storyPanel').hidden=false;$('storyLaunch').setAttribute('aria-expanded','true');$('storySlide').focus()});
 window.addEventListener('wrapped-range-changed',()=>{if($('storyRangeMode').value==='dashboard')buildSlides()});
 document.addEventListener('keydown',e=>{
  if(e.altKey||e.ctrlKey||e.metaKey||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
