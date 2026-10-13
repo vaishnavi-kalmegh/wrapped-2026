@@ -18,6 +18,7 @@ on:
       - 'insights.js'
       - 'script.js'
       - 'dashboard.js'
+      - 'experience.js'
       - 'index.html'
       - 'styles.css'
       - 'tests/**'
