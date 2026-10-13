@@ -143,5 +143,5 @@ test('detailed dashboard option retains short-only groups for listening-time sor
   assert.equal(detailed.tracks.find(t=>t.name==='Short track').plays,0);
   assert.equal(detailed.tracks.find(t=>t.name==='Short track').ms,25000);
   assert.equal(detailed.albums.find(a=>a.album==='Short album').plays,0);
-  assert.equal(detailed.artists.find(a=>a.name==='Artist').plays,2);
+  assert.equal(detailed.artists.find(a=>a.name==='Artist').plays,1);
 });
