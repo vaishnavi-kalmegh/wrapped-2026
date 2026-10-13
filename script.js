@@ -214,7 +214,7 @@ function wrapText(ctx,text,x,y,width,lineHeight,maxLines=100){
  return y+visible.length*lineHeight;
 }
 function downloadCard(){
- const s=slides[slideIndex];
+ const cardIndex=slideIndex,cardCount=slides.length,s=slides[cardIndex];
  if(!s||s.type==='empty'||s.type==='error'){ $('fileStatus').textContent='Choose a story with verified listening statistics before exporting a card.';return; }
  try{
   const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;
@@ -250,8 +250,8 @@ function downloadCard(){
    if(!blob){$('fileStatus').textContent='Image export failed in this browser. Try another browser or save the story text manually.';return}
    try{
     const url=URL.createObjectURL(blob),link=document.createElement('a'),safeType=String(s.type||'story').replace(/[^a-z0-9-]/gi,'').toLowerCase();
-    link.href=url;link.download='wrapped-story-card-'+safeType+'-'+String(slideIndex+1).padStart(2,'0')+'.png';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    $('fileStatus').textContent='Saved story card '+(slideIndex+1)+' of '+slides.length+' as a PNG. Only this story card was exported; raw history stays in this browser.';
+    link.href=url;link.download='wrapped-story-card-'+safeType+'-'+String(cardIndex+1).padStart(2,'0')+'.png';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $('fileStatus').textContent='Saved story card '+(cardIndex+1)+' of '+cardCount+' as a PNG. Only this story card was exported; raw history stays in this browser.';
    }catch(error){$('fileStatus').textContent='The image was created but the download could not start. Check your browser download settings and try again.'}
   },'image/png');
  }catch(error){$('fileStatus').textContent='Image export failed: '+(error&&error.message?error.message:'unsupported canvas operation')+'. Your listening history was not uploaded.'}
