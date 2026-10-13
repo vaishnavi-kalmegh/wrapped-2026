@@ -128,7 +128,8 @@
   }
   function summarize(input, options) {
     const opts = options || {};
-    const normalized = input && input.records && input.diagnostics ? input : normalizeRecords(input);
+    const isNormalizedArray = Array.isArray(input) && input.length > 0 && input.every(r => r && typeof r === 'object' && Object.prototype.hasOwnProperty.call(r, 'durationMs') && Object.prototype.hasOwnProperty.call(r, 'primaryArtist') && Object.prototype.hasOwnProperty.call(r, 'timestamp'));
+    const normalized = input && input.records && input.diagnostics ? input : isNormalizedArray ? { records: input, diagnostics: { inputRecords: input.length, acceptedRecords: input.length, rejectedRecords: 0, invalidTimestamps: input.filter(r => r.timestamp == null).length, missingTrack: input.filter(r => !r.track).length, missingArtist: input.filter(r => !r.primaryArtist).length, missingDuration: input.filter(r => !r.durationMs).length, excludedNonMusic: input.filter(r => r.isNonMusic).length, ambiguousContent: 0, warnings: [] } } : normalizeRecords(input);
     const requestedRange = opts.range || null;
     if (requestedRange && requestedRange.valid === false) return { valid: false, error: requestedRange.error, diagnostics: normalized.diagnostics };
     const records = normalized.records.filter(r => inRange(r, requestedRange) && !r.isNonMusic);
