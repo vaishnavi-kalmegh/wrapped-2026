@@ -17,6 +17,7 @@
   function rangeFor(value,start,end){
     const A=root.WrappedAnalytics;
     if(!A)return {valid:false,error:'Analytics engine is unavailable.'};
+    if(value==='wrapped2026')return A.dateRange('custom',{start:'2026-01-01',end:'2026-11-15'});
     if(value==='custom')return A.dateRange('custom',{start,end});
     return A.dateRange(value||'allTime');
   }
@@ -84,7 +85,7 @@
   }
   let rows=[],diagnostics=null,range=null,summary=null,slideList=[],slideIndex=0,trackLimit=10,artistLimit=10,requestToken={artist:0,track:0},artworkCache=new Map();
   function getRange(){
-    const mode=$('experienceRange')?.value||'allTime';
+    const mode=$('experienceRange')?.value||'wrapped2026';
     const start=$('experienceStart')?.value||'',end=$('experienceEnd')?.value||'';
     return rangeFor(mode,start,end);
   }
