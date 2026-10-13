@@ -165,7 +165,7 @@
       if (r.album) track.albumNames.add(r.album);
       tm.set(trackKey, track);
       add(am, r.primaryArtist.toLocaleLowerCase(), r.primaryArtist, r.durationMs, 1, qualifies);
-      r.secondaryArtists.forEach(a => add(am, a.toLocaleLowerCase(), a, r.durationMs, 0.5, qualifies));
+      r.secondaryArtists.forEach(a => { if (qualifies) artistNames.add(a); add(am, a.toLocaleLowerCase(), a, r.durationMs, 0.5, qualifies); });
       if (r.album) {
         const albumKey = r.album.toLocaleLowerCase() + '\u0000' + r.primaryArtist.toLocaleLowerCase();
         const entry = albums.get(albumKey) || { album: r.album, artist: r.primaryArtist, plays: 0, ms: 0 };
