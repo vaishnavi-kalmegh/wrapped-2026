@@ -17,8 +17,8 @@
   function rangeFor(value,start,end){
     const A=root.WrappedAnalytics;
     if(!A)return {valid:false,error:'Analytics engine is unavailable.'};
-    if(value==='wrapped2026')return A.dateRange('custom',{start:'2026-01-01',end:'2026-11-15'});
-    if(value==='custom')return A.dateRange('custom',{start,end});
+    if(value==='wrapped2026'){const r=A.dateRange('custom',{start:'2026-01-01',end:'2026-11-15'});if(r.valid)r.label='2026 Wrapped · Jan 1–Nov 15 UTC';return r;}
+    if(value==='custom'){const r=A.dateRange('custom',{start,end});if(r.valid)r.label=start+' – '+end+' UTC';return r;}
     return A.dateRange(value||'allTime');
   }
   function summarize(rows,range){
