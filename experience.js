@@ -60,8 +60,8 @@
     if(!plays)return {title:'The quiet before the data.',body:'This range has recorded duration, but no qualifying plays over 30 seconds to rank tracks or artists.',kind:'duration',basis:'Short events count toward recorded listening time; a qualifying play must exceed 30,000 ms.'};
     const top=tracks[0],topShare=top?top.plays/plays:0;
     if(top&&plays>=10&&topShare>=.2)return {title:'One track kept calling.',body:top.name+' accounts for '+number(topShare*100)+'% of qualifying plays in this range.',kind:'repeat',basis:'At least 10 qualifying plays; top track is at least 20% of qualifying plays.'};
-    const lead=artists[0],artistShare=lead&&summary.plays?lead.plays/summary.plays:0;
-    if(lead&&plays>=10&&artistShare>=.5)return {title:'One artist dominates the receipts.',body:lead.name+' leads the estimated artist play points with '+number(artistShare*100)+'% of the total qualifying play count.',kind:'artist',basis:'At least 10 qualifying plays; leading artist point count is at least half of the qualifying play count. Collaborations use weighted estimates.'};
+    const lead=artists[0],artistPoints=artists.reduce((sum,a)=>sum+a.plays,0),artistShare=lead&&artistPoints?lead.plays/artistPoints:0;
+    if(lead&&plays>=10&&artistShare>=.5)return {title:'One artist dominates the receipts.',body:lead.name+' accounts for '+number(artistShare*100)+'% of estimated artist play points in this range.',kind:'artist',basis:'At least 10 qualifying plays; the leading artist holds at least half of estimated artist play points. Primary artists receive 1.0 point and explicitly listed secondary artists 0.5, so the estimates can overlap.'};
     if(tracks.length>=20&&plays>=10&&topShare<.1)return {title:'Your rotation goes deep.',body:tracks.length+' track groups have qualifying plays, and the top track is under 10% of the qualifying-play total.',kind:'catalog',basis:'At least 10 qualifying plays, at least 20 qualifying track groups, and top track below 10%.'};
     const hour=hourBuckets(summary).sort((a,b)=>b.ms-a.ms||a.hour-b.hour)[0];
     if(hour&&hour.ms>0&&hour.share>=.2)return {title:'A clear hour has emerged.',body:hour.label+' UTC holds '+number(hour.share*100)+'% of the timestamped listening duration in this range.',kind:'hour',basis:'The most active UTC hour holds at least 20% of all timestamped recorded duration.'};
@@ -72,8 +72,8 @@
     if(!summary.records.length)return [{type:'empty',eyebrow:'NO MATCHING RECORDS',title:'No story without receipts.',body:'No eligible music records were found in this range. Try another date range or import more history.'}];
     const slides=[],lore=loreFor(summary),tracks=summary.tracks.filter(x=>x.plays>0),artists=summary.artists.filter(x=>x.plays>0);
     slides.push({type:'lore',eyebrow:'LISTENING LORE',title:lore.title,body:lore.body,detail:lore.basis});
-    if(artists.length)slides.push({type:'artists',eyebrow:'TOP ARTISTS',title:'Your top artists.',items:artists.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,value:number(x.plays)+' estimated play points'})),body:'Primary artist = 1.0 point; explicitly listed secondary artists = 0.5 per qualifying event.'});
-    if(tracks.length)slides.push({type:'tracks',eyebrow:'TOP SONGS',title:'The tracks in heavy rotation.',items:tracks.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,artist:x.artist,value:number(x.plays)+' qualifying plays'})),body:'Track groups use track name + primary artist. Qualifying plays exceed 30,000 ms.'});
+    if(artists.length)slides.push({type:'artists',eyebrow:'TOP ARTISTS',title:'Your top artists.',items:artists.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,value:number(x.plays)+' estimated play points',imageUrl:x.imageUrl})),body:'Primary artist = 1.0 point; explicitly listed secondary artists = 0.5 per qualifying event.'});
+    if(tracks.length)slides.push({type:'tracks',eyebrow:'TOP SONGS',title:'The tracks in heavy rotation.',items:tracks.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,artist:x.artist,value:number(x.plays)+' qualifying plays',imageUrl:x.artworkUrl})),body:'Track groups use track name + primary artist. Qualifying plays exceed 30,000 ms.'});
     slides.push({type:'duration',eyebrow:'YOUR LISTENING NUMBERS',title:minutes(summary.total)+' recorded.',body:number(summary.plays)+' qualifying plays across '+number(summary.artistNames.size)+' artist names with qualifying plays.',detail:'Recorded duration includes positive short events; play rankings require more than 30 seconds.'});
     const months=monthBuckets(summary,range).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms||a.id.localeCompare(b.id));
     if(months.length)slides.push({type:'month',eyebrow:'LISTENING PATTERNS',title:months[0].label+' was your peak month.',body:minutes(months[0].ms)+' recorded in that UTC calendar month.',detail:'Only timestamped events can be assigned to a month. The selected export may be incomplete.'});
@@ -124,7 +124,7 @@
         const limit=type==='artist'?artistLimit:trackLimit;
         const visible=(type==='artist'?summary?.artists:summary?.tracks)||[];
         const index=visible.findIndex(x=>key(type==='artist'?x.name:x.name+'|'+x.artist)===key(type==='artist'?item.name:item.name+'|'+item.artist));
-        if(index>=0&&index<Math.min(5,limit))renderRanks(type);
+        if(index>=0&&index<Math.min(5,limit)){renderRanks(type);renderStory();}
       }).catch(()=>{});
     });
   }
@@ -134,7 +134,7 @@
     if(!response.ok)throw new Error('Artwork lookup failed');
     const data=await response.json();
     const match=(data.results||[]).find(x=>key(x.trackName)===key(track)&&key(x.artistName)===key(artist)&&x.artworkUrl100);
-    return match?match.artworkUrl100.replace('100x100bb','600x600bb'):null;
+    return match?(match.artworkUrl600||match.artworkUrl100||null):null;
   }
   async function artistImage(name){
     const url='https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(name);
@@ -209,7 +209,7 @@
     slideList=makeStory(summary,range);slideIndex=Math.max(0,Math.min(slideIndex,slideList.length-1));const viewer=$('storyViewer'),slide=slideList[slideIndex]||slideList[0];
     if(!slide)return;
     const items=slide.items||[];
-    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span><div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
+    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
     $('storyStep').textContent='STORY '+(slideIndex+1)+' / '+slideList.length;
     $('storyProgress').innerHTML=slideList.map((x,i)=>'<span class="'+(i<=slideIndex?'active':'')+'"></span>').join('');
     $('storyProgress').setAttribute('aria-valuenow',String(slideIndex+1));$('storyProgress').setAttribute('aria-valuemax',String(slideList.length));
@@ -266,7 +266,7 @@
     $('storyPrevious').addEventListener('click',()=>{slideIndex=Math.max(0,slideIndex-1);renderStory();});
     $('storyNext').addEventListener('click',()=>{slideIndex=Math.min(slideList.length-1,slideIndex+1);renderStory();});
     $('storyDownload').addEventListener('click',downloadStory);
-    root.document.addEventListener('keydown',e=>{if($('storyViewer').hidden)return;if(e.key==='Escape'){e.preventDefault();closeStory();}else if(e.key==='ArrowRight'){e.preventDefault();slideIndex=Math.min(slideList.length-1,slideIndex+1);renderStory();}else if(e.key==='ArrowLeft'){e.preventDefault();slideIndex=Math.max(0,slideIndex-1);renderStory();}});
+    root.document.addEventListener('keydown',e=>{if($('storyViewer').hidden)return;if(e.key==='Tab'){const focusable=[...$('storyViewer').querySelectorAll('button:not([disabled]),a[href]')];if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&root.document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&root.document.activeElement===last){e.preventDefault();first.focus();}return;}if(e.key==='Escape'){e.preventDefault();closeStory();}else if(e.key==='ArrowRight'){e.preventDefault();slideIndex=Math.min(slideList.length-1,slideIndex+1);renderStory();}else if(e.key==='ArrowLeft'){e.preventDefault();slideIndex=Math.max(0,slideIndex-1);renderStory();}});
     root.addEventListener('wrapped-history-updated',e=>{rows=Array.isArray(e.detail&&e.detail.rows)?e.detail.rows.slice():[];diagnostics=e.detail&&e.detail.diagnostics||null;update();});
     update();
   }
