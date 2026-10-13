@@ -60,7 +60,7 @@ function applyTheme(theme) {
   : theme==='futuristic'
    ? ['LISTENING DURATION','UNIQUE ARTIST NODES','QUALIFYING PLAYS (>30S)','PRIMARY TRACK']
    : ['TIME SPENT LISTENING','UNIQUE ARTISTS','QUALIFYING PLAYS (>30S)','YOUR #1 TRACK'];
- document.querySelectorAll('.stat-label').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]});
+ document.querySelectorAll('.stats-grid .stat-label').forEach((el,i)=>{if(labels[i])el.textContent=labels[i]});
   const lifetimeLabels=theme==='y2k'?['TIME IN YOUR ENTIRE FEELS','ARTIST ORBIT','BOPS OVER 30 SECONDS','ALBUM LORE']:theme==='futuristic'?['RECORDED DURATION','ARTIST NODES','QUALIFYING EVENTS','ALBUM GROUPS']:['RECORDED LISTENING','QUALIFYING PLAYS','ARTIST NAMES','ALBUM GROUPS'];
   document.querySelectorAll('.lifetime-metrics .stat-label').forEach((el,i)=>{if(lifetimeLabels[i])el.textContent=lifetimeLabels[i]});
  const storyEyebrow=document.querySelector('.story-topline .eyebrow');
