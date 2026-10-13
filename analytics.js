@@ -195,9 +195,15 @@
   }
   function inspectFiles(fileResults) {
     const results = Array.isArray(fileResults) ? fileResults : [];
-    const diagnostics = { filesSelected: results.length, filesParsed: 0, invalidFiles: [], unrecognizedFiles: [], emptyFiles: [], acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, invalidDuration: 0, zeroDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
+    const diagnostics = { filesSelected: results.length, filesParsed: 0, invalidFiles: [], unrecognizedFiles: [], emptyFiles: [], possibleDuplicateFiles: [], acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, invalidDuration: 0, zeroDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
     const rows = [];
+    const fileSignatures = new Set();
     for (const result of results) {
+      if (result && result.name && result.size != null && result.lastModified != null) {
+        const signature = [result.name, result.size, result.lastModified].join('\\u0000');
+        if (fileSignatures.has(signature)) diagnostics.possibleDuplicateFiles.push(result.name);
+        else fileSignatures.add(signature);
+      }
       if (!result || result.error) { diagnostics.invalidFiles.push({name:result && result.name || 'unknown file',reason:result && result.error || 'Invalid file'}); continue; }
       const structure = inspectStructure(result.data);
       if (!structure.recognized) { diagnostics.unrecognizedFiles.push(result.name || 'unnamed file'); continue; }
@@ -211,6 +217,7 @@
     if (diagnostics.invalidFiles.length) diagnostics.warnings.unshift(diagnostics.invalidFiles.length + ' file(s) contained invalid JSON or could not be read.');
     if (diagnostics.unrecognizedFiles.length) diagnostics.warnings.push(diagnostics.unrecognizedFiles.length + ' file(s) did not contain a recognized Spotify history array.');
     if (diagnostics.emptyFiles.length) diagnostics.warnings.push(diagnostics.emptyFiles.length + ' recognized history file(s) contained zero records.');
+    if (diagnostics.possibleDuplicateFiles.length) diagnostics.warnings.push('Possible duplicate file selection: ' + [...new Set(diagnostics.possibleDuplicateFiles)].join(', ') + '. These files were retained; check the selection if totals look doubled. Listening events are never deduplicated automatically.');
     return { rows, diagnostics };
   }
   function sortEvents(records, direction) {
