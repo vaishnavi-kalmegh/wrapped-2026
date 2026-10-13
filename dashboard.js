@@ -56,7 +56,7 @@
   }
   function renderArtists() {
     const s=summary,items=s?s.artists:[];
-    const result=pagedTable('artists',items,'artistRows',{count:5,search:x=>[x.name,...(s?s.tracks:[]).filter(t=>t.artist.toLocaleLowerCase()===x.name.toLocaleLowerCase()).map(t=>t.name)].join(' '),render:(tr,x)=>{
+    const result=pagedTable('artists',items,'artistRows',{count:5,search:x=>[x.name,...(s?s.tracks:[]).filter(t=>(t.artistNames||[t.artist]).some(a=>a.toLocaleLowerCase()===x.name.toLocaleLowerCase())).map(t=>t.name)].join(' '),render:(tr,x)=>{
       cell(tr,x.name);cell(tr,number(x.plays));cell(tr,time(x.ms));
       const td=document.createElement('td'),button=document.createElement('button');button.type='button';button.className='inline-action';button.textContent='Show tracks';button.setAttribute('aria-expanded','false');
       button.addEventListener('click',()=>{
@@ -64,7 +64,7 @@
         if(next&&next.classList.contains('artist-breakdown')){next.remove();button.setAttribute('aria-expanded','false');button.textContent='Show tracks';return;}
         const detail=document.createElement('tr');detail.className='artist-breakdown';const pane=document.createElement('td');pane.colSpan=5;
         const heading=document.createElement('strong');heading.textContent='Tracks by '+x.name;pane.append(heading);
-        const matches=(s?s.tracks:[]).filter(t=>t.artist.toLocaleLowerCase()===x.name.toLocaleLowerCase()).sort((a,b)=>b.plays-a.plays||b.ms-a.ms);
+        const matches=(s?s.tracks:[]).filter(t=>(t.artistNames||[t.artist]).some(a=>a.toLocaleLowerCase()===x.name.toLocaleLowerCase())).sort((a,b)=>b.plays-a.plays||b.ms-a.ms);
         if(!matches.length){const p=document.createElement('p');p.textContent='No qualifying track groups for this artist in the selected range.';pane.append(p);}
         else{const list=document.createElement('ul');matches.slice(0,12).forEach(t=>{const li=document.createElement('li');li.textContent=t.name+' — '+number(t.plays)+' plays · '+time(t.ms);list.append(li);});pane.append(list);}
         detail.append(pane);tr.after(detail);button.setAttribute('aria-expanded','true');button.textContent='Hide tracks';
