@@ -243,8 +243,9 @@ function downloadCard(){
   if(s.number){const numGrad=ctx.createLinearGradient(82,0,850,0);numGrad.addColorStop(0,p.accent);numGrad.addColorStop(1,p.accent2);ctx.fillStyle=numGrad;ctx.font='700 112px sans-serif';y=wrapText(ctx,s.number,82,y,850,120,1)+18}
   const bodyText=[...(Array.isArray(s.list)?s.list:[]),s.body||''].filter(Boolean).join('\n');
   ctx.fillStyle=p.ink;ctx.font='400 29px sans-serif';wrapText(ctx,bodyText,82,Math.max(1070,y),850,43,6);
-  if($('includeRangeOnCard').checked){ctx.fillStyle=p.accent;ctx.font='600 21px monospace';wrapText(ctx,'RANGE: '+(s.rangeLabel||'Selected date range'),82,1450,850,28,2)}
-  if($('includeMethodOnCard').checked){ctx.fillStyle=p.muted;ctx.font='20px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',82,1510,850,27,2)}
+  if($('includeRangeOnCard').checked){ctx.fillStyle=p.accent;ctx.font='600 21px monospace';wrapText(ctx,'RANGE: '+(s.rangeLabel||'Selected date range'),82,1370,850,28,2)}
+  ctx.fillStyle=p.muted;ctx.font='20px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',82,1430,850,27,2);
+  if($('includeCalculationNote').checked){ctx.fillStyle=p.muted;ctx.font='19px monospace';wrapText(ctx,'QUALIFYING PLAYS > 30,000 MS · ARTIST POINTS ARE ESTIMATES',82,1500,850,26,2)}
   ctx.fillStyle=p.accent2;ctx.fillRect(82,1608,916,3);ctx.fillStyle=p.accent;ctx.font='700 27px monospace';ctx.fillText(p.footer,82,1680);ctx.fillStyle=p.muted;ctx.font='22px monospace';ctx.fillText('CARD '+String(slideIndex+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0'),82,1740);ctx.fillText(theme==='y2k'?'made with real receipts & extra glitter':theme==='futuristic'?'LOCAL PROCESSING // NO DATA UPLOADED':'Generated locally from selected history',82,1790);
   canvas.toBlob(blob=>{
    if(!blob){$('fileStatus').textContent='Image export failed in this browser. Try another browser or save the story text manually.';return}
