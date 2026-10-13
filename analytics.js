@@ -18,11 +18,16 @@
   const DURATION_KEYS = ['ms_played', 'msPlayed', 'duration_ms', 'played_duration_ms', 'milliseconds_played'];
   const TIME_KEYS = ['ts', 'endTime', 'end_time', 'timestamp', 'played_at', 'playedAt', 'date', 'end_timestamp'];
 
+  function inspectStructure(value) {
+    if (Array.isArray(value)) return { recognized: true, rows: value };
+    if (!value || typeof value !== 'object') return { recognized: false, rows: [] };
+    for (const key of ROW_KEYS) {
+      if (Array.isArray(value[key])) return { recognized: true, rows: value[key] };
+    }
+    return { recognized: false, rows: [] };
+  }
   function rowsOf(value) {
-    if (Array.isArray(value)) return value;
-    if (!value || typeof value !== 'object') return [];
-    for (const key of ROW_KEYS) if (Array.isArray(value[key])) return value[key];
-    return [];
+    return inspectStructure(value).rows;
   }
   function parseTimestamp(value) {
     if (value == null || value === '') return null;
@@ -51,8 +56,10 @@
     const albumRaw = first(raw, ALBUM_KEYS);
     const album = clean(albumRaw != null && typeof albumRaw === 'object' ? (albumRaw.name || albumRaw.album_name || '') : albumRaw);
     const durationRaw = first(raw, DURATION_KEYS);
-    const durationNumber = durationRaw == null ? 0 : Number(durationRaw);
-    const durationMs = Number.isFinite(durationNumber) && durationNumber > 0 ? durationNumber : 0;
+    const durationMissing = durationRaw == null || (typeof durationRaw === 'string' && !durationRaw.trim());
+    const durationNumber = durationMissing ? 0 : (typeof durationRaw === 'number' || typeof durationRaw === 'string') ? Number(durationRaw) : NaN;
+    const durationStatus = durationMissing ? 'missing' : !Number.isFinite(durationNumber) || durationNumber < 0 ? 'invalid' : durationNumber === 0 ? 'zero' : 'valid';
+    const durationMs = durationStatus === 'valid' ? durationNumber : 0;
     const episodeName = clean(first(raw, ['episode_name', 'episodeName', 'master_metadata_episode_name']));
     const audiobookTitle = clean(first(raw, ['audiobook_title', 'audiobookTitle']));
     const contentType = clean(first(raw, ['spotify_episode_uri', 'episode_uri'])) || (episodeName ? 'episode' : audiobookTitle ? 'audiobook' : '');
@@ -60,13 +67,13 @@
     return {
       index, timestamp, date: timestamp == null ? null : new Date(timestamp).toISOString(),
       track, primaryArtist, secondaryArtists, artists: [...new Set([primaryArtist, ...secondaryArtists].filter(Boolean))],
-      album: album || null, durationMs, isEpisode: Boolean(episodeName || /episode/i.test(contentType)),
+      album: album || null, durationMs, durationStatus, isEpisode: Boolean(episodeName || /episode/i.test(contentType)),
       isAudiobook: Boolean(audiobookTitle || /audiobook/i.test(contentType)), isNonMusic,
       raw
     };
   }
   function normalizeRecords(rows) {
-    const diagnostics = { inputRecords: 0, acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
+    const diagnostics = { inputRecords: 0, acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, invalidDuration: 0, zeroDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
     const records = [];
     for (let i = 0; i < (Array.isArray(rows) ? rows.length : 0); i++) {
       diagnostics.inputRecords++;
@@ -76,7 +83,9 @@
       if (record.timestamp == null) diagnostics.invalidTimestamps++;
       if (!record.track) diagnostics.missingTrack++;
       if (!record.primaryArtist) diagnostics.missingArtist++;
-      if (!record.durationMs) diagnostics.missingDuration++;
+      if (record.durationStatus === 'missing') diagnostics.missingDuration++;
+      if (record.durationStatus === 'invalid') diagnostics.invalidDuration++;
+      if (record.durationStatus === 'zero') diagnostics.zeroDuration++;
       if (record.isNonMusic) diagnostics.excludedNonMusic++;
       // We do not guess whether an unlabelled record is music or non-music.
       if (!record.track && !record.primaryArtist && !record.isNonMusic) diagnostics.ambiguousContent++;
@@ -84,6 +93,9 @@
     if (diagnostics.rejectedRecords) diagnostics.warnings.push(diagnostics.rejectedRecords + ' non-object record(s) were rejected.');
     if (diagnostics.invalidTimestamps) diagnostics.warnings.push(diagnostics.invalidTimestamps + ' record(s) have missing or invalid timestamps and are excluded from date-filtered analytics.');
     if (diagnostics.missingTrack || diagnostics.missingArtist) diagnostics.warnings.push('Some records lack track or artist metadata; they can contribute to eligible duration totals but cannot enter track rankings without both fields.');
+    if (diagnostics.missingDuration) diagnostics.warnings.push(diagnostics.missingDuration + ' record(s) have no recorded duration value.');
+    if (diagnostics.invalidDuration) diagnostics.warnings.push(diagnostics.invalidDuration + ' record(s) have malformed or negative duration values; their duration is treated as zero.');
+    if (diagnostics.zeroDuration) diagnostics.warnings.push(diagnostics.zeroDuration + ' record(s) have a recorded duration of zero milliseconds.');
     if (diagnostics.excludedNonMusic) diagnostics.warnings.push(diagnostics.excludedNonMusic + ' episode/audiobook-marked record(s) are excluded from music analytics.');
     if (diagnostics.ambiguousContent) diagnostics.warnings.push(diagnostics.ambiguousContent + ' record(s) have insufficient metadata to classify confidently; they are not labelled as music or non-music.');
     return { records, diagnostics };
@@ -129,7 +141,7 @@
   function summarize(input, options) {
     const opts = options || {};
     const isNormalizedArray = Array.isArray(input) && input.length > 0 && input.every(r => r && typeof r === 'object' && Object.prototype.hasOwnProperty.call(r, 'durationMs') && Object.prototype.hasOwnProperty.call(r, 'primaryArtist') && Object.prototype.hasOwnProperty.call(r, 'timestamp'));
-    const normalized = input && input.records && input.diagnostics ? input : isNormalizedArray ? { records: input, diagnostics: { inputRecords: input.length, acceptedRecords: input.length, rejectedRecords: 0, invalidTimestamps: input.filter(r => r.timestamp == null).length, missingTrack: input.filter(r => !r.track).length, missingArtist: input.filter(r => !r.primaryArtist).length, missingDuration: input.filter(r => !r.durationMs).length, excludedNonMusic: input.filter(r => r.isNonMusic).length, ambiguousContent: 0, warnings: [] } } : normalizeRecords(input);
+    const normalized = input && input.records && input.diagnostics ? input : isNormalizedArray ? { records: input, diagnostics: { inputRecords: input.length, acceptedRecords: input.length, rejectedRecords: 0, invalidTimestamps: input.filter(r => r.timestamp == null).length, missingTrack: input.filter(r => !r.track).length, missingArtist: input.filter(r => !r.primaryArtist).length, missingDuration: input.filter(r => r.durationStatus === 'missing' || (!r.durationStatus && !r.durationMs)).length, invalidDuration: input.filter(r => r.durationStatus === 'invalid').length, zeroDuration: input.filter(r => r.durationStatus === 'zero').length, excludedNonMusic: input.filter(r => r.isNonMusic).length, ambiguousContent: 0, warnings: [] } } : normalizeRecords(input);
     const requestedRange = opts.range || null;
     if (requestedRange && requestedRange.valid === false) return { valid: false, error: requestedRange.error, diagnostics: normalized.diagnostics };
     const records = normalized.records.filter(r => inRange(r, requestedRange) && !r.isNonMusic);
@@ -182,19 +194,23 @@
     return { valid:true, range:requestedRange || {valid:true,kind:'allTime',start:null,end:null,label:'All time'}, records, tracks, artists, albums:albumRankings, artistNames, days, months, monthsByYear, hours, total, plays, events, rankedEvents, activeDays:days.size, maxDay, maxMonth:months.indexOf(Math.max(...months)), undatedDuration, timestampedRecords, durationRecords, diagnostics:normalized.diagnostics };
   }
   function inspectFiles(fileResults) {
-    const diagnostics = { filesSelected: fileResults.length, filesParsed: 0, invalidFiles: [], emptyFiles: [], acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
+    const results = Array.isArray(fileResults) ? fileResults : [];
+    const diagnostics = { filesSelected: results.length, filesParsed: 0, invalidFiles: [], unrecognizedFiles: [], emptyFiles: [], acceptedRecords: 0, rejectedRecords: 0, invalidTimestamps: 0, missingTrack: 0, missingArtist: 0, missingDuration: 0, invalidDuration: 0, zeroDuration: 0, excludedNonMusic: 0, ambiguousContent: 0, warnings: [] };
     const rows = [];
-    for (const result of fileResults) {
+    for (const result of results) {
       if (!result || result.error) { diagnostics.invalidFiles.push({name:result && result.name || 'unknown file',reason:result && result.error || 'Invalid file'}); continue; }
-      const found = rowsOf(result.data);
-      if (!found.length) { diagnostics.emptyFiles.push(result.name || 'unnamed file'); continue; }
-      diagnostics.filesParsed++; rows.push(...found);
+      const structure = inspectStructure(result.data);
+      if (!structure.recognized) { diagnostics.unrecognizedFiles.push(result.name || 'unnamed file'); continue; }
+      diagnostics.filesParsed++;
+      if (!structure.rows.length) diagnostics.emptyFiles.push(result.name || 'unnamed file');
+      rows.push(...structure.rows);
     }
     const parsed = normalizeRecords(rows).diagnostics;
-    for (const key of ['acceptedRecords','rejectedRecords','invalidTimestamps','missingTrack','missingArtist','missingDuration','excludedNonMusic','ambiguousContent']) diagnostics[key] = parsed[key];
+    for (const key of ['acceptedRecords','rejectedRecords','invalidTimestamps','missingTrack','missingArtist','missingDuration','invalidDuration','zeroDuration','excludedNonMusic','ambiguousContent']) diagnostics[key] = parsed[key];
     diagnostics.warnings = [...parsed.warnings];
     if (diagnostics.invalidFiles.length) diagnostics.warnings.unshift(diagnostics.invalidFiles.length + ' file(s) contained invalid JSON or could not be read.');
-    if (diagnostics.emptyFiles.length) diagnostics.warnings.push(diagnostics.emptyFiles.length + ' file(s) had no recognized history array.');
+    if (diagnostics.unrecognizedFiles.length) diagnostics.warnings.push(diagnostics.unrecognizedFiles.length + ' file(s) did not contain a recognized Spotify history array.');
+    if (diagnostics.emptyFiles.length) diagnostics.warnings.push(diagnostics.emptyFiles.length + ' recognized history file(s) contained zero records.');
     return { rows, diagnostics };
   }
   function sortEvents(records, direction) {
