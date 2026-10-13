@@ -294,3 +294,9 @@ html[data-theme="futuristic"] .pattern-bar-fill{background:linear-gradient(90deg
 html[data-theme="y2k"] .insight-card,html[data-theme="y2k"] .insight-columns>section{border-color:#e7b6ef;background:#fffaff}
 html[data-theme="futuristic"] .insight-card,html[data-theme="futuristic"] .insight-columns>section{border-color:#aeb6bf;background:linear-gradient(135deg,#fafbfc,#e0e4e8)}
 @media(max-width:760px){.insight-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.insight-card{padding:12px}.insight-columns{grid-template-columns:1fr}.insight-columns>section{padding:14px}}
+
+/* Phase 4: accessible, explicit local report export */
+.report-export-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px}
+.report-export-row .tiny{flex:1 1 260px;min-width:0;margin:0;color:var(--muted);line-height:1.6}
+.report-export-row .button{min-height:42px}
+@media(max-width:760px){.report-export-row{align-items:stretch;flex-direction:column}.report-export-row .button{width:100%;justify-content:center}.report-export-row .tiny{flex:auto}}
