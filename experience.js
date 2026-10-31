@@ -120,7 +120,7 @@
     slides.push({type:'closing',eyebrow:'THE FINAL RECEIPT',title:'All signal. No invented stats.',body:'Based on imported history and the selected range: '+(range.label||'All time')+'.',detail:'This archive may be incomplete. No raw listening-history records are included in story exports.'});
     return slides;
   }
-  let rows=[],diagnostics=null,range=null,summary=null,slideList=[],slideIndex=0,trackLimit=10,artistLimit=10,requestToken={artist:0,track:0},artworkCache=new Map();
+  let rows=[],diagnostics=null,range=null,summary=null,slideList=[],slideIndex=0,trackLimit=5,artistLimit=5,requestToken={artist:0,track:0},artworkCache=new Map();
   function getRange(){
     const mode=$('experienceRange')?.value||'wrapped2026';
     const start=$('experienceStart')?.value||'',end=$('experienceEnd')?.value||'';
@@ -138,7 +138,7 @@
     const image=img?'<img data-artwork-kind="'+(artist?'artist':'track')+'" data-artwork-key="'+escapeHTML(artist?item.name:item.name+'|'+item.artist)+'" loading="lazy" src="'+escapeHTML(img)+'" alt="'+escapeHTML(alt)+'" referrerpolicy="no-referrer">':'<div class="art-fallback '+(artist?'artist-fallback':'track-fallback')+'" aria-hidden="true"><span>'+(artist?'✳':'♫')+'</span></div>';
     return '<article class="music-card '+(rank<=5?'featured':'')+' '+type+'-card"><div class="music-art">'+image+'<span class="music-rank">'+String(rank).padStart(2,'0')+'</span></div><div class="music-meta"><h3 title="'+escapeHTML(name)+'">'+escapeHTML(name)+'</h3><p>'+escapeHTML(artist?sub:item.artist)+'</p><span class="music-metric">'+escapeHTML(artist?number(item.plays)+' estimated play points':number(item.plays)+' qualifying plays')+'</span></div></article>';
   }
-  function visibleRankings(items,limit){const ranked=(items||[]).filter(x=>x&&x.plays>0);return ranked.slice(0,Math.min(50,Math.max(10,Number(limit)||10)));}
+  function visibleRankings(items,limit){const ranked=(items||[]).filter(x=>x&&x.plays>0);return ranked.slice(0,Math.min(50,Math.max(5,Number(limit)||5)));}
   function renderRanks(type){
     const artist=type==='artist',items=artist?(summary?summary.artists:[]):(summary?summary.tracks:[]),limit=artist?artistLimit:trackLimit,container=$(artist?'artistCards':'trackCards'),more=$(artist?'artistsLoadMore':'tracksLoadMore'),status=$(artist?'artistCardsStatus':'trackCardsStatus');
     const ranked=items.filter(x=>x.plays>0),shown=visibleRankings(items,limit);
@@ -148,8 +148,8 @@
     attachArtworkFallbacks(container);
     status.textContent='Showing '+shown.length+' of '+Math.min(50,ranked.length)+' available ranked '+(artist?'artist':'track')+' groups. Rankings use the shared analytics engine.';
     more.hidden=shown.length>=Math.min(50,ranked.length);
-    more.textContent='LOAD MORE · '+Math.min(10,Math.min(50,ranked.length)-shown.length)+' NEXT';
-    const collapse=$(artist?'artistsCollapse':'tracksCollapse');collapse.hidden=shown.length<=10;
+    more.textContent='LOAD MORE · '+Math.min(5,Math.min(50,ranked.length)-shown.length)+' NEXT';
+    const collapse=$(artist?'artistsCollapse':'tracksCollapse');collapse.hidden=shown.length<=5;
     resolveArtwork(shown.slice(0,5),type);
   }
   const ARTWORK_SUCCESS_TTL=30*60*1000,ARTWORK_MISS_TTL=5*60*1000,ARTWORK_ERROR_TTL=30*1000;
@@ -396,7 +396,7 @@
     if(!nextRange.valid){summary={valid:false,error:nextRange.error,records:[]};$('experienceStatus').textContent=nextRange.error;renderAll();return;}
     summary=summarize(rows,range);
     $('experienceStatus').textContent=rows.length?(range.label+' · '+number(summary.records.length)+' eligible music records in selected range. Calendar grouping uses UTC. Export may be incomplete.'): 'Import history to unlock your personalized recap.';
-    trackLimit=10;artistLimit=10;slideIndex=0;renderAll();
+    trackLimit=5;artistLimit=5;slideIndex=0;renderAll();
   }
   function renderAll(){renderLore();renderRanks('artist');renderRanks('track');renderNumbers();renderDonut();renderClock();renderHeatmap();renderStory();}
   function init(){
@@ -405,10 +405,10 @@
     $('experienceStart').addEventListener('change',()=>{if($('experienceRange').value==='custom')update();});
     $('experienceEnd').addEventListener('change',()=>{if($('experienceRange').value==='custom')update();});
     $('artworkLookupEnabled').addEventListener('change',()=>{requestToken.artist++;requestToken.track++;if($('artworkLookupEnabled').checked){renderRanks('artist');renderRanks('track');}else{artworkCache.clear();renderRanks('artist');renderRanks('track');}});
-    $('artistsLoadMore').addEventListener('click',()=>{artistLimit=Math.min(50,artistLimit+10);renderRanks('artist');});
-    $('tracksLoadMore').addEventListener('click',()=>{trackLimit=Math.min(50,trackLimit+10);renderRanks('track');});
-    $('artistsCollapse').addEventListener('click',()=>{artistLimit=10;renderRanks('artist');});
-    $('tracksCollapse').addEventListener('click',()=>{trackLimit=10;renderRanks('track');});
+    $('artistsLoadMore').addEventListener('click',()=>{artistLimit=Math.min(50,artistLimit+5);renderRanks('artist');});
+    $('tracksLoadMore').addEventListener('click',()=>{trackLimit=Math.min(50,trackLimit+5);renderRanks('track');});
+    $('artistsCollapse').addEventListener('click',()=>{artistLimit=5;renderRanks('artist');});
+    $('tracksCollapse').addEventListener('click',()=>{trackLimit=5;renderRanks('track');});
     $('storyOpen').addEventListener('click',openStory);$('storyClose').addEventListener('click',closeStory);
     $('storyPrevious').addEventListener('click',()=>{slideIndex=Math.max(0,slideIndex-1);renderStory();});
     $('storyNext').addEventListener('click',()=>{slideIndex=Math.min(slideList.length-1,slideIndex+1);renderStory();});
