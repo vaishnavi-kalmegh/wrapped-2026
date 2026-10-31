@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#11110f">
-  <meta name="description" content="A chaotic, private, data-driven 2026 music and life recap.">
+  <meta name="description" content="Your Spotify listening history, turned into a personal story. Processed privately in your browser.">
   <title>WRAPPED.exe — 2026 so far</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
   <script src="analytics.js" defer></script>
   <script src="script.js" defer></script>
   <script src="dashboard.js" defer></script>
@@ -30,7 +31,7 @@
       <div class="hero-copy">
         <p class="eyebrow">YOUR YEAR, YOUR RECEIPTS // 2026</p>
         <h1>THE YEAR<br>WAS <span class="chaos">LOUD.</span></h1>
-        <p class="lede">A lovingly unhinged recap of the songs you looped and the life you lived. No fake stats. No imaginary lore.</p>
+        <p class="lede">Your listening year, told through the songs and artists you actually played.</p>
         <a class="button button-bright" href="#data">LOAD YOUR DATA <span aria-hidden="true">↘</span></a>
       </div>
       <div class="hero-art" aria-label="Decorative album inspired shapes">
@@ -44,15 +45,15 @@
 
     <section class="section-head" id="data">
       <div><p class="eyebrow">THE RECEIPTS</p><h2>Bring the evidence.</h2></div>
-      <p>Choose one or more Spotify Extended Streaming History JSON files. They're analyzed in this browser and never uploaded by this app.</p>
+      <p>Upload your Spotify Extended Streaming History ZIP. We unpack and analyze it right here in your browser.</p>
     </section>
     <section class="panel data-panel">
-      <details class="history-help"><summary>How to download your Spotify listening history</summary><ol><li>Open Spotify’s <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener noreferrer">Account Privacy page</a> and sign in.</li><li>Find <b>Download your data</b> and request <b>Extended streaming history</b>.</li><li>Confirm the request if Spotify emails you, then wait for Spotify to prepare the archive. It can take up to 30 days.</li><li>Extract the archive on your computer and select the listening-history <code>.json</code> files below. Multiple files are supported.</li></ol><p><b>Privacy:</b> Never share your raw export publicly. This page reads files in your browser; it does not send them to a server.</p><p><a href="https://support.spotify.com/in-en/article/understanding-your-data/" target="_blank" rel="noopener noreferrer">Spotify’s official data guide ↗</a></p></details><div class="upload-zone">
+      <details class="history-help"><summary>How to download your Spotify listening history</summary><ol><li>Open Spotify’s <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener noreferrer">Account Privacy page</a> and sign in.</li><li>Find <b>Download your data</b> and request <b>Extended streaming history</b>.</li><li>Confirm the request if Spotify emails you, then wait for Spotify to prepare the archive. It can take up to 30 days.</li><li>Upload the ZIP you downloaded. The app finds and reads the listening-history JSON files inside it.</li></ol><p><b>Privacy:</b> Never share your raw export publicly. This page reads files in your browser; it does not send them to a server.</p><p><a href="https://support.spotify.com/in-en/article/understanding-your-data/" target="_blank" rel="noopener noreferrer">Spotify’s official data guide ↗</a></p></details><div class="upload-zone">
         <div class="upload-icon">↥</div>
-        <div><h3>Choose your listening history</h3><p>Select Spotify streaming-history JSON files, usually named <code>Streaming_History</code> or <code>endsong</code>. Multiple files are supported.</p></div>
-        <label class="button button-light" for="historyFiles">CHOOSE JSON FILES</label>
-        <input id="historyFiles" type="file" accept=".json,application/json" multiple>
-        <p class="tiny" id="fileStatus" aria-live="polite">Waiting for your data. Nothing is calculated yet.</p>
+        <div><h3>Choose your listening history</h3><p>Drop your Spotify Extended Streaming History ZIP here. No extraction needed.</p></div>
+        <label class="button button-light" for="historyFiles">CHOOSE ZIP FILE</label>
+        <input id="historyFiles" type="file" accept=".zip,application/zip,application/x-zip-compressed,.json,application/json" multiple>
+        <p class="tiny" id="fileStatus" aria-live="polite">Your ZIP is processed locally. Nothing is sent to a server.</p>
       </div>
       <details class="import-diagnostics"><summary>Import diagnostics</summary><p id="importDiagnosticsDetail">Detailed file and record diagnostics will appear here after import.</p></details>
       <div class="privacy-note"><span>🔒</span><span><b>Privacy by design.</b> Files are read locally in your browser. Refreshing clears results. Never commit your raw export to GitHub.</span></div>
@@ -61,7 +62,7 @@
 
     <section id="experience" class="experience" aria-label="Personal listening story">
       <div class="experience-bar">
-        <div><p class="eyebrow">YOUR ARCHIVE, REMIXED</p><p id="experienceStatus" class="experience-status" aria-live="polite">Import history to reveal your personal listening story.</p></div>
+        <div><p class="eyebrow">YOUR ARCHIVE, REMIXED</p><p id="experienceStatus" class="experience-status" aria-live="polite">Upload your ZIP to reveal your listening story.</p></div>
         <div class="experience-range">
           <label for="experienceRange">LISTENING WINDOW</label>
           <select id="experienceRange">
@@ -90,13 +91,13 @@
       <section class="experience-section" aria-labelledby="artistCardsHeading">
         <div class="experience-heading"><div><p class="eyebrow">02 / THE ROTATION</p><h2 id="artistCardsHeading">Top artists<span class="heading-period">.</span></h2><p>Ranked by estimated play points, not Spotify's proprietary formula.</p></div><span class="section-side-note">FIRST FIVE IN THE SPOTLIGHT</span></div>
         <div id="artistCards" class="music-card-grid artist-card-grid"><div class="empty-state"><span>✳</span><h3>Your artists, front and center.</h3><p>Import history to unlock ranked artist cards.</p></div></div>
-        <div class="rank-controls"><p id="artistCardsStatus" aria-live="polite">Top 10 shown by default; up to 50 available.</p><div><button id="artistsCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 10</button><button id="artistsLoadMore" class="button button-bright" type="button" hidden>LOAD MORE ARTISTS</button></div></div>
+        <div class="rank-controls"><p id="artistCardsStatus" aria-live="polite">Top 5 shown by default; up to 50 available.</p><div><button id="artistsCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 5</button><button id="artistsLoadMore" class="button button-bright" type="button" hidden>LOAD MORE ARTISTS</button></div></div>
       </section>
 
       <section class="experience-section" aria-labelledby="trackCardsHeading">
         <div class="experience-heading"><div><p class="eyebrow">03 / THE SOUNDTRACK</p><h2 id="trackCardsHeading">Top songs<span class="heading-period">.</span></h2><p>Same-title tracks stay separate when their primary artists differ.</p></div><span class="section-side-note">RANKED FROM YOUR HISTORY</span></div>
         <div id="trackCards" class="music-card-grid track-card-grid"><div class="empty-state"><span>♫</span><h3>The songs that made the cut.</h3><p>Your ranked track cards appear after import.</p></div></div>
-        <div class="rank-controls"><p id="trackCardsStatus" aria-live="polite">Top 10 shown by default; up to 50 available.</p><div><button id="tracksCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 10</button><button id="tracksLoadMore" class="button button-bright" type="button" hidden>LOAD MORE SONGS</button></div></div>
+        <div class="rank-controls"><p id="trackCardsStatus" aria-live="polite">Top 5 shown by default; up to 50 available.</p><div><button id="tracksCollapse" class="button button-quiet" type="button" hidden>COLLAPSE TO TOP 5</button><button id="tracksLoadMore" class="button button-bright" type="button" hidden>LOAD MORE SONGS</button></div></div>
       </section>
 
       <section class="experience-section numbers-section" aria-labelledby="numbersHeading">

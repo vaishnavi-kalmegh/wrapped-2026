@@ -1,23 +1,34 @@
 # WRAPPED.exe — your listening story
 
-A personal, Spotify Wrapped-inspired listening recap built with plain HTML, CSS, and vanilla JavaScript. It turns imported Spotify Extended Streaming History into ranked music cards, evidence-based Listening Lore, interactive UTC visualizations, and a full-screen shareable story.
+A personal, Spotify Wrapped-inspired listening story built with HTML, CSS, and vanilla JavaScript. Upload the Spotify Extended Streaming History ZIP; the browser unpacks and parses the JSON locally, then creates evidence-based story cards you can export as PNGs.
 
 **Live site:** https://vaishnavi-kalmegh.github.io/wrapped-2026/
 
 ## The experience
 
-The primary flow is intentionally story-first:
+The primary flow is intentionally story-first and ZIP-first:
+
+1. Download **Extended streaming history** from Spotify's Account Privacy page.
+2. Upload the ZIP directly — no manual extraction or JSON selection.
+3. The browser unpacks the ZIP and parses matching history JSON files locally.
+4. The app generates a listening story from the imported records.
+5. Export individual 1080 × 1920 story cards as PNG images.
+
+The story highlights listening patterns, monthly top artists and tracks, the most-replayed track, artist concentration versus discovery, and changes between earlier and later months. Raw history is not sent to a server.
+
+### Story sections
+
 
 1. **Listening Lore** — one concise archive observation, shown only when its documented threshold is supported by the selected records.
-2. **Top Artists** — ranked artist cards, with exact-title Wikipedia page thumbnails when available and explicitly enabled.
-3. **Top Songs** — ranked track cards with matching album artwork from Apple's public iTunes Search API when available and explicitly enabled.
+2. **Top Artists** — ranked artist cards, with optional exact-title Wikipedia thumbnails.
+3. **Top Songs** — ranked track cards, including the most-replayed track, with optional matching album artwork.
 4. **Your Listening Numbers** — recorded duration, qualifying plays, artist names and track groups.
 5. **Listening Patterns** — a monthly donut chart, a 24-hour UTC radial duration chart, and a day-level UTC heatmap.
-6. **Full Story Mode** — a viewport-filling, sequential recap with Previous/Next, progress, Escape/arrow-key navigation, and individual 1080 × 1920 PNG card export.
+6. **Full Story Mode** — monthly highlights, artist loyalty versus discovery, listening changes over time, and individual 1080 × 1920 PNG card export.
 
 The established **2026 Wrapped window is Jan 1–Nov 15, 2026 UTC** and is the default selection. The range control also supports All imported history, This UTC year, Last 12 months, and custom inclusive UTC dates. The chart labels include years, so the same month in different years is never combined or presented as a complete calendar year when it is only a partial window.
 
-Top Artists and Top Songs show the first 10 ranked results by default. Each Load More action reveals the next 10, up to 50; Collapse returns the section to 10. If fewer than 50 ranked groups exist, only those available are shown. The shared analytics engine provides the rankings; the interface does not independently recalculate them.
+Top Artists and Top Songs show five ranked results by default. Each Load More action reveals the next five, up to 50; Collapse returns the section to five. If fewer than 50 ranked groups exist, only those available are shown. The shared analytics engine provides the rankings; the interface does not independently recalculate them.
 
 Albums remain available in the underlying analytics engine but are not a separate primary section in this story-first redesign. The main experience no longer exposes a Listening History page, listening-streak views, equal-length period comparisons, or first-observed-in-this-archive discoveries. Those calculations are not used in the new Story Mode.
 
@@ -49,13 +60,13 @@ Artwork lookup is **off until you explicitly enable “Allow artwork lookups (na
 - Successful and no-match results are cached in memory for 30 minutes and 5 minutes respectively; transient lookup errors are cached for 30 seconds. Duplicate in-flight lookups are shared. Requests have a timeout, and HTTP failures, malformed responses, missing artwork and image-load errors fall back to the designed placeholders. A failed image URL is marked unavailable for the current session window rather than repeatedly rendered.
 - These opt-in requests send music names to the external services and your browser also fetches the returned image. **Raw streaming-history files, account identifiers, and complete event records are never sent.** If you leave lookups disabled or a service is unavailable, the app remains usable with fallback artwork.
 - The current stylesheet also imports DM Mono and Space Grotesk from Google Fonts. That font request is separate from listening-history processing and may require a network connection.
-- No Spotify OAuth, API key, backend, mandatory login, persistent browser storage, or chart library is used. Imported history stays in browser memory and is cleared when the page is refreshed.
+- No Spotify OAuth, API key, backend, mandatory login, persistent browser storage, or chart library is used. JSZip is loaded in the browser to unpack the archive; extracted JSON contents remain local. Imported history stays in browser memory and is cleared when the page is refreshed.
 
 ## Import and diagnostics
 
 1. Request Spotify **Extended streaming history** from Spotify's [Account Privacy page](https://www.spotify.com/account/privacy/).
 2. Extract the downloaded archive locally.
-3. Select one or more streaming-history JSON files in the app.
+3. Upload the downloaded ZIP directly. The browser extracts matching Spotify streaming-history JSON files and parses them locally. You can still select individual JSON files if needed.
 
 Supported top-level history arrays include a JSON array or an array under \`items\`, \`streamingHistory\`, \`streaming_history\`, \`endsong\`, \`records\`, or \`history\`. Common timestamp, track, artist, album, and duration aliases are normalized by \`analytics.js\`. Unknown metadata is not guessed.
 
