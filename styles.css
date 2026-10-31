@@ -487,3 +487,18 @@ html[data-theme="futuristic"] .number-tile-primary>span,html[data-theme="futuris
 .import-diagnostics{margin-top:12px;padding:13px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted)}
 .import-diagnostics summary{cursor:pointer;color:var(--ink);font:10px 'DM Mono',monospace;letter-spacing:.07em;text-transform:uppercase}
 .import-diagnostics p{white-space:pre-line;font:10px/1.7 'DM Mono',monospace;overflow-wrap:anywhere;margin:12px 0 0}
+
+
+/* Focus the default experience on the story, not the analytics manual. */
+.experience-nav,.numbers-section,.patterns-section{display:none!important}
+.artwork-privacy{display:none!important}
+.experience-heading>div>p:not(.eyebrow){display:none}
+.experience-bar .experience-status{font-size:12px}
+.rank-controls>p{display:none}
+.history-help{margin-bottom:14px}
+.history-help ol{margin-bottom:8px}
+.history-help p{margin:8px 0}
+.story-monthly .story-list li{align-items:flex-start}
+.story-monthly .story-list li b{max-width:42%;white-space:normal}
+.story-change .story-body,.story-discovery .story-body{font-size:clamp(17px,2vw,23px)}
+@media(max-width:600px){.experience-bar{gap:12px}.experience-range{width:100%}.experience-range select{width:100%}.story-monthly .story-list li b{max-width:40%}}
