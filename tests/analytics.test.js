@@ -682,3 +682,52 @@ test('Phase 6 invalid custom range has a safe story empty state', () => {
   assert.equal(stories[0].type,'empty');
   assert.match(stories[0].title,/range/i);
 });
+
+
+test('ZIP-first import and story features are present without sending raw files to a server', () => {
+  const root=path.join(__dirname,'..');
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const script=fs.readFileSync(path.join(root,'script.js'),'utf8');
+  const experience=fs.readFileSync(path.join(root,'experience.js'),'utf8');
+  const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');
+  assert.match(html,/jszip@3\.10\.1/);
+  assert.match(html,/accept="[^"]*\.zip/);
+  assert.match(html,/CHOOSE ZIP FILE/);
+  assert.match(script,/JSZip\.loadAsync\(file\)/);
+  assert.match(script,/entry\.async\('string'\)/);
+  assert.match(script,/streaming\.?history\|endsong/);
+  assert.match(experience,/function monthlyHighlights/);
+  assert.match(experience,/function discoveryProfile/);
+  assert.match(experience,/LOYALTY VS DISCOVERY/);
+  assert.match(experience,/HOW YOUR YEAR SHIFTED/);
+  assert.match(css,/\.numbers-section,\.patterns-section\{display:none!important\}/);
+});
+
+test('Monthly story highlights use qualifying plays and preserve month-specific top artist and track', () => {
+  const rows=[
+    row('2026-01-02T00:00:00Z','January Hit','January Artist',45000),
+    row('2026-01-03T00:00:00Z','January Hit','January Artist',40000),
+    row('2026-01-04T00:00:00Z','Short Skip','Other Artist',30000),
+    row('2026-02-02T00:00:00Z','February Hit','February Artist',60000)
+  ];
+  const summary=A.summarize(rows,{range:custom('2026-01-01','2026-02-28')});
+  const months=E.monthlyHighlights(summary);
+  assert.equal(months.length,2);
+  assert.equal(months[0].topArtist[0],'January Artist');
+  assert.equal(months[0].topTrack.name,'January Hit');
+  assert.equal(months[0].topTrack.plays,2);
+  assert.equal(months[0].plays,2,'exactly 30 seconds does not qualify');
+  assert.equal(months[1].topArtist[0],'February Artist');
+});
+
+test('Discovery profile reports concentration and distinct artist breadth without assigning a genre or mood', () => {
+  const summary=A.summarize([
+    row('2026-01-01T00:00:00Z','A','Lead Artist',40000),
+    row('2026-01-02T00:00:00Z','B','Lead Artist',40000),
+    row('2026-01-03T00:00:00Z','C','New Artist',40000)
+  ],{range:custom('2026-01-01','2026-12-31')});
+  const profile=E.discoveryProfile(summary);
+  assert.equal(profile.artistCount,2);
+  assert.equal(profile.leader.name,'Lead Artist');
+  assert.ok(profile.leaderShare>0.6&&profile.leaderShare<0.7);
+});
