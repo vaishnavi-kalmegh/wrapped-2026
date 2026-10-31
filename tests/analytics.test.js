@@ -463,15 +463,15 @@ test('Story Mode UI exposes navigation, accessible status, responsive reduced-mo
 
 test('Phase 6 rankings show ten by default, expand by batches, cap at fifty, and respect short lists', () => {
   const ranked=Array.from({length:63},(_,i)=>({name:'Track '+i,plays:100-i,ms:(100-i)*40000}));
+  assert.equal(E.visibleRankings(ranked,5).length,5);
+  assert.deepEqual(E.visibleRankings(ranked,5).map(x=>x.name),ranked.slice(0,5).map(x=>x.name));
   assert.equal(E.visibleRankings(ranked,10).length,10);
-  assert.deepEqual(E.visibleRankings(ranked,10).map(x=>x.name),ranked.slice(0,10).map(x=>x.name));
+  assert.equal(E.visibleRankings(ranked,15).length,15);
   assert.equal(E.visibleRankings(ranked,20).length,20);
-  assert.equal(E.visibleRankings(ranked,30).length,30);
-  assert.equal(E.visibleRankings(ranked,40).length,40);
-  assert.equal(E.visibleRankings(ranked,50).length,50);
-  assert.equal(E.visibleRankings(ranked,60).length,50);
-  assert.equal(E.visibleRankings(ranked.slice(0,8),10).length,8);
-  assert.equal(E.visibleRankings(ranked.map(x=>({...x,plays:0})),10).length,0);
+  assert.equal(E.visibleRankings(ranked,25).length,25);
+  assert.equal(E.visibleRankings(ranked,55).length,50);
+  assert.equal(E.visibleRankings(ranked.slice(0,3),5).length,3);
+  assert.equal(E.visibleRankings(ranked.map(x=>({...x,plays:0})),5).length,0);
 });
 
 test('Phase 6 monthly buckets sum short-event duration and calculate consistent percentages', () => {
