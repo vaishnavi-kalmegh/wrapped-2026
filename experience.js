@@ -98,6 +98,7 @@
     slides.push({type:'lore',eyebrow:'LISTENING PERSONALITY',title:lore.title,body:lore.body,detail:lore.basis});
     if(artists.length)slides.push({type:'artists',eyebrow:'TOP ARTISTS',title:'Your top artists.',items:artists.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,value:number(x.plays)+' estimated play points',imageUrl:x.imageUrl})),body:'Primary artist = 1.0 point; explicitly listed secondary artists = 0.5 per qualifying event.'});
     if(tracks.length)slides.push({type:'tracks',eyebrow:'TOP SONGS',title:'The tracks in heavy rotation.',items:tracks.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,artist:x.artist,value:number(x.plays)+' qualifying plays',imageUrl:x.artworkUrl})),body:'Track groups use track name + primary artist. Qualifying plays exceed 30,000 ms.'});
+    if(tracks[0])slides.push({type:'repeat',eyebrow:'MOST REPLAYED',title:tracks[0].name+' stayed in rotation.',body:'You played this track '+number(tracks[0].plays)+' qualifying times in the selected listening window.',detail:'A qualifying play is strictly longer than 30 seconds. Counts come from the imported archive and may be incomplete.'});
     slides.push({type:'duration',eyebrow:'YOUR LISTENING NUMBERS',title:minutes(summary.total)+' recorded.',body:number(summary.plays)+' qualifying plays across '+number(summary.artistNames.size)+' artist names with qualifying plays.',detail:'Recorded duration includes positive short events; play rankings require more than 30 seconds.'});
     const profile=discoveryProfile(summary);
     if(profile.leader&&profile.artistCount){
