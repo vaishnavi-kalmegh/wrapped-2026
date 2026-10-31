@@ -28,7 +28,7 @@ The story highlights listening patterns, monthly top artists and tracks, the mos
 
 The established **2026 Wrapped window is Jan 1–Nov 15, 2026 UTC** and is the default selection. The range control also supports All imported history, This UTC year, Last 12 months, and custom inclusive UTC dates. The chart labels include years, so the same month in different years is never combined or presented as a complete calendar year when it is only a partial window.
 
-Top Artists and Top Songs show the first 10 ranked results by default. Each Load More action reveals the next 10, up to 50; Collapse returns the section to 10. If fewer than 50 ranked groups exist, only those available are shown. The shared analytics engine provides the rankings; the interface does not independently recalculate them.
+Top Artists and Top Songs show five ranked results by default. Each Load More action reveals the next five, up to 50; Collapse returns the section to five. If fewer than 50 ranked groups exist, only those available are shown. The shared analytics engine provides the rankings; the interface does not independently recalculate them.
 
 Albums remain available in the underlying analytics engine but are not a separate primary section in this story-first redesign. The main experience no longer exposes a Listening History page, listening-streak views, equal-length period comparisons, or first-observed-in-this-archive discoveries. Those calculations are not used in the new Story Mode.
 
