@@ -6,7 +6,7 @@ const themeCopy = {
  heroButton:'LOAD YOUR DATA ↘', receipts:'THE RECEIPTS', bring:'Bring the evidence.', receiptsCopy:'Choose one or more Spotify Extended Streaming History JSON files. They\'re analyzed in this browser and never uploaded by this app.',
  numbers:'THE NUMBERS', listeningLore:'Your listening lore.', plot:'THE PLOT TWIST', pressPlay:'Press play on your year.', activity:'ACTIVITY LOG', activityTitle:'When the soundtrack happened.',
  awards:'TROPHIES & DELUSIONS', awardsTitle:'Your evidence-based awards.', friend:'FRIEND LORE', friendTitle:'Compare soundtracks.', life:'PERSONAL DLC', lifeTitle:'Life Wrapped.',
- upload:'Choose your listening history', uploadCopy:'Upload your Spotify Extended Streaming History ZIP. No manual extraction is needed.',
+ upload:'Choose your listening history', uploadCopy:'Choose your Spotify Extended Streaming History ZIP. No manual extraction needed.',
  choose:'CHOOSE ZIP FILE', topArtists:'Artists on repeat.', topTracks:'Soundtrack of the year.', storyWait:'WAITING FOR THE RECEIPTS', storyTitle:'Your year has a soundtrack.', storyCopy:'Upload your streaming history to unlock your personalized story.',
  footer:'BUILT FOR THE PLOT.'
  },
@@ -15,7 +15,7 @@ const themeCopy = {
  heroButton:'SPILL MY STATS ✧', receipts:'THE TEA, WITH RECEIPTS', bring:'Okay bestfren, drop the data.', receiptsCopy:'Upload your Spotify Extended Streaming History ZIP. We unpack it right here in your browser.',
  numbers:'THE MAIN CHARACTER STATS', listeningLore:'The soundtrack of your slay.', plot:'THE PLOT TWIST ✦', pressPlay:'Cue the dramatic reveal.', activity:'THE LISTENING DIARY', activityTitle:'When the change happened.',
  awards:'CROWNS & CHAOTIC WINS', awardsTitle:'Awards you actually earned, babe.', friend:'TWIN CHECK', friendTitle:'Are your music taste twins?', life:'THE LORE DROP', lifeTitle:'Life Wrapped, diva edition.',
- upload:'Bestie, drop your listening lore', uploadCopy:'Upload your Spotify Extended Streaming History ZIP. No manual extraction needed.',
+ upload:'Bestie, drop your listening lore', uploadCopy:'Choose your Spotify Extended Streaming History ZIP. No manual extraction needed.',
  choose:'UPLOAD MY ZIP ✨', topArtists:'Your ride-or-dies.', topTracks:'The bops on repeat.', storyWait:'THE TEA IS LOADING', storyTitle:'Your year had RANGE.', storyCopy:'Upload your history and let the main-character montage begin.',
  footer:'STAY SPARKLY. STAY UNREASONABLE.'
  },
@@ -114,8 +114,12 @@ async function loadFiles(files){
     const entries=Object.values(archive.files).filter(entry=>!entry.dir&&/\.json$/i.test(entry.name)&&/(streaming.?history|endsong|audio.?history)/i.test(entry.name));
     if(!entries.length){errors.push(file.name+': no Spotify streaming-history JSON files were found inside this ZIP.');continue;}
     if(entries.length>200){errors.push(file.name+': too many JSON files (maximum 200 per ZIP).');continue;}
+    let expandedBytes=0;
     for(const entry of entries){
      try{
+      const declaredSize=Number(entry._data&&entry._data.uncompressedSize)||0;
+      if(declaredSize>100*1024*1024||expandedBytes+declaredSize>500*1024*1024){errors.push(entry.name+': archive exceeds the local extraction safety limit.');continue;}
+      expandedBytes+=declaredSize;
       const text=await entry.async('string');
       if(text.length>100*1024*1024){errors.push(entry.name+': file exceeds the 100 MB safety limit.');continue;}
       results.push({name:entry.name,size:text.length,lastModified:file.lastModified,data:JSON.parse(text)});
