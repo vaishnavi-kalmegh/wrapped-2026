@@ -461,7 +461,7 @@ test('Story Mode UI exposes navigation, accessible status, responsive reduced-mo
 });
 
 
-test('Phase 6 rankings show ten by default, expand by batches, cap at fifty, and respect short lists', () => {
+test('Phase 6 rankings show five by default, expand by batches, cap at fifty, and respect short lists', () => {
   const ranked=Array.from({length:63},(_,i)=>({name:'Track '+i,plays:100-i,ms:(100-i)*40000}));
   assert.equal(E.visibleRankings(ranked,5).length,5);
   assert.deepEqual(E.visibleRankings(ranked,5).map(x=>x.name),ranked.slice(0,5).map(x=>x.name));
