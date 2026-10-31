@@ -6,26 +6,26 @@ const themeCopy = {
  heroButton:'LOAD YOUR DATA ↘', receipts:'THE RECEIPTS', bring:'Bring the evidence.', receiptsCopy:'Choose one or more Spotify Extended Streaming History JSON files. They\'re analyzed in this browser and never uploaded by this app.',
  numbers:'THE NUMBERS', listeningLore:'Your listening lore.', plot:'THE PLOT TWIST', pressPlay:'Press play on your year.', activity:'ACTIVITY LOG', activityTitle:'When the soundtrack happened.',
  awards:'TROPHIES & DELUSIONS', awardsTitle:'Your evidence-based awards.', friend:'FRIEND LORE', friendTitle:'Compare soundtracks.', life:'PERSONAL DLC', lifeTitle:'Life Wrapped.',
- upload:'Choose your listening history', uploadCopy:'Select Spotify streaming-history JSON files, usually named Streaming_History or endsong. Multiple files are supported.',
- choose:'CHOOSE JSON FILES', topArtists:'Artists on repeat.', topTracks:'Soundtrack of the year.', storyWait:'WAITING FOR THE RECEIPTS', storyTitle:'Your year has a soundtrack.', storyCopy:'Upload your streaming history to unlock your personalized story.',
+ upload:'Choose your listening history', uploadCopy:'Upload your Spotify Extended Streaming History ZIP. No manual extraction is needed.',
+ choose:'CHOOSE ZIP FILE', topArtists:'Artists on repeat.', topTracks:'Soundtrack of the year.', storyWait:'WAITING FOR THE RECEIPTS', storyTitle:'Your year has a soundtrack.', storyCopy:'Upload your streaming history to unlock your personalized story.',
  footer:'BUILT FOR THE PLOT.'
  },
  y2k: {
  heroEyebrow:'BABE, YOUR 2026 RECEIPTS ✧', heroTitle:'YOUR YEAR<br>WAS <span class="chaos">ICONIC.</span>', heroLede:'Your listening diary, but make it glittery, dramatic and a tiny bit delulu. The numbers are real. The sparkle is extra.',
- heroButton:'SPILL MY STATS ✧', receipts:'THE TEA, WITH RECEIPTS', bring:'Okay bestfren, drop the data.', receiptsCopy:'Pick your Spotify Extended Streaming History JSON files. We do the math right here in your browser—no uploading your lore.',
+ heroButton:'SPILL MY STATS ✧', receipts:'THE TEA, WITH RECEIPTS', bring:'Okay bestfren, drop the data.', receiptsCopy:'Upload your Spotify Extended Streaming History ZIP. We unpack it right here in your browser.',
  numbers:'THE MAIN CHARACTER STATS', listeningLore:'The soundtrack of your slay.', plot:'THE PLOT TWIST ✦', pressPlay:'Cue the dramatic reveal.', activity:'THE LISTENING DIARY', activityTitle:'When the change happened.',
  awards:'CROWNS & CHAOTIC WINS', awardsTitle:'Awards you actually earned, babe.', friend:'TWIN CHECK', friendTitle:'Are your music taste twins?', life:'THE LORE DROP', lifeTitle:'Life Wrapped, diva edition.',
- upload:'Bestie, drop your listening lore', uploadCopy:'Choose your Spotify history JSON files. Look for Streaming_History or endsong in your download. Yes, you can select multiple files.',
- choose:'LET ME SEE THE RECEIPTS ✨', topArtists:'Your ride-or-dies.', topTracks:'The bops on repeat.', storyWait:'THE TEA IS LOADING', storyTitle:'Your year had RANGE.', storyCopy:'Upload your history and let the main-character montage begin.',
+ upload:'Bestie, drop your listening lore', uploadCopy:'Upload your Spotify Extended Streaming History ZIP. No manual extraction needed.',
+ choose:'UPLOAD MY ZIP ✨', topArtists:'Your ride-or-dies.', topTracks:'The bops on repeat.', storyWait:'THE TEA IS LOADING', storyTitle:'Your year had RANGE.', storyCopy:'Upload your history and let the main-character montage begin.',
  footer:'STAY SPARKLY. STAY UNREASONABLE.'
  },
  futuristic: {
  heroEyebrow:'AUDIO ARCHIVE // CYCLE 2026', heroTitle:'YEARLY<br><span class="chaos">SIGNAL.</span>', heroLede:'A precision-built listening debrief. Verified records only. No synthetic memories. No unsupported conclusions.',
- heroButton:'INITIALIZE DATA ↘', receipts:'DATA INTAKE', bring:'Import listening archive.', receiptsCopy:'Select Spotify Extended Streaming History JSON files. Processing remains client-side; the archive is not transmitted to this interface.',
+ heroButton:'INITIALIZE DATA ↘', receipts:'DATA INTAKE', bring:'Import listening archive.', receiptsCopy:'Upload your Spotify Extended Streaming History ZIP. Processing remains client-side; the archive is not transmitted.',
  numbers:'SYSTEM METRICS', listeningLore:'Your audio profile.', plot:'SEQUENCE PLAYBACK', pressPlay:'Review annual sequence.', activity:'TEMPORAL ANALYSIS', activityTitle:'Listening across the timeline.',
  awards:'VERIFIED DISTINCTIONS', awardsTitle:'Awards by recorded evidence.', friend:'CROSS-ARCHIVE', friendTitle:'Compare two listening profiles.', life:'USER-DEFINED ARCHIVE', lifeTitle:'Personal event log.',
- upload:'Select listening archive', uploadCopy:'Import Spotify streaming-history JSON files, commonly named Streaming_History or endsong. Multiple archive segments are accepted.',
- choose:'SELECT JSON ARCHIVE', topArtists:'Highest-frequency artists.', topTracks:'Highest-frequency tracks.', storyWait:'AWAITING ARCHIVE', storyTitle:'Your audio record awaits.', storyCopy:'Import listening history to generate your personalized sequence.',
+ upload:'Select listening archive', uploadCopy:'Upload your Spotify Extended Streaming History ZIP. No manual extraction is needed.',
+ choose:'SELECT ZIP ARCHIVE', topArtists:'Highest-frequency artists.', topTracks:'Highest-frequency tracks.', storyWait:'AWAITING ARCHIVE', storyTitle:'Your audio record awaits.', storyCopy:'Import listening history to generate your personalized sequence.',
  footer:'SIGNAL VERIFIED. LORE UNMODIFIED.'
  }
 };
