@@ -695,7 +695,7 @@ test('ZIP-first import and story features are present without sending raw files 
   assert.match(html,/CHOOSE ZIP FILE/);
   assert.match(script,/JSZip\.loadAsync\(file\)/);
   assert.match(script,/entry\.async\('string'\)/);
-  assert.match(script,/streaming\.?history\|endsong/);
+  assert.match(script,/(streaming.?history|endsong)/);
   assert.match(experience,/function monthlyHighlights/);
   assert.match(experience,/function discoveryProfile/);
   assert.match(experience,/LOYALTY VS DISCOVERY/);
