@@ -71,14 +71,47 @@
     if(hour&&hour.ms>0&&hour.share>=.2)return {title:'A clear hour has emerged.',body:hour.label+' UTC holds '+number(hour.share*100)+'% of the timestamped listening duration in this range.',kind:'hour',basis:'The most active UTC hour holds at least 20% of all timestamped recorded duration.'};
     return {title:'A listening pattern, not a personality test.',body:tracks.length+' track groups and '+artists.length+' artist groups earned qualifying plays in this range.',kind:'breadth',basis:'Counts use qualifying events strictly over 30,000 ms; no genre or mood is inferred.'};
   }
+  function monthlyHighlights(summary){
+    const months=new Map();
+    (summary&&summary.records||[]).forEach(record=>{
+      if(record.timestamp==null||!record.track||!record.primaryArtist||record.durationMs<=30000)return;
+      const date=new Date(record.timestamp),id=date.toISOString().slice(0,7);
+      if(!months.has(id))months.set(id,{id,label:monthNames[date.getUTCMonth()]+' '+date.getUTCFullYear(),plays:0,artists:new Map(),tracks:new Map()});
+      const month=months.get(id),artist=record.primaryArtist,trackKey=key(record.track)+'|'+key(artist);
+      month.plays++;month.artists.set(artist,(month.artists.get(artist)||0)+1);
+      const current=month.tracks.get(trackKey)||{name:record.track,artist,plays:0};current.plays++;month.tracks.set(trackKey,current);
+    });
+    return [...months.values()].sort((a,b)=>a.id.localeCompare(b.id)).map(month=>({
+      ...month,topArtist:[...month.artists].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]||null,
+      topTrack:[...month.tracks.values()].sort((a,b)=>b.plays-a.plays||a.name.localeCompare(b.name))[0]||null,
+      uniqueArtists:month.artists.size
+    }));
+  }
+  function discoveryProfile(summary){
+    const artists=(summary&&summary.artists||[]).filter(x=>x.plays>0),total=artists.reduce((s,x)=>s+x.plays,0),leader=artists[0];
+    return {artistCount:artists.length,leader:leader||null,leaderShare:leader&&total?leader.plays/total:0,totalPoints:total};
+  }
   function makeStory(summary,range){
     if(!summary||!summary.valid)return [{type:'empty',eyebrow:'RANGE ERROR',title:'That range needs a second look.',body:summary&&summary.error||'Choose a valid date range.'}];
     if(!summary.records.length)return [{type:'empty',eyebrow:'NO MATCHING RECORDS',title:'No story without receipts.',body:'No eligible music records were found in this range. Try another date range or import more history.'}];
     const slides=[],lore=loreFor(summary),tracks=summary.tracks.filter(x=>x.plays>0),artists=summary.artists.filter(x=>x.plays>0);
-    slides.push({type:'lore',eyebrow:'LISTENING LORE',title:lore.title,body:lore.body,detail:lore.basis});
+    slides.push({type:'lore',eyebrow:'LISTENING PERSONALITY',title:lore.title,body:lore.body,detail:lore.basis});
     if(artists.length)slides.push({type:'artists',eyebrow:'TOP ARTISTS',title:'Your top artists.',items:artists.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,value:number(x.plays)+' estimated play points',imageUrl:x.imageUrl})),body:'Primary artist = 1.0 point; explicitly listed secondary artists = 0.5 per qualifying event.'});
     if(tracks.length)slides.push({type:'tracks',eyebrow:'TOP SONGS',title:'The tracks in heavy rotation.',items:tracks.slice(0,5).map((x,i)=>({rank:i+1,name:x.name,artist:x.artist,value:number(x.plays)+' qualifying plays',imageUrl:x.artworkUrl})),body:'Track groups use track name + primary artist. Qualifying plays exceed 30,000 ms.'});
     slides.push({type:'duration',eyebrow:'YOUR LISTENING NUMBERS',title:minutes(summary.total)+' recorded.',body:number(summary.plays)+' qualifying plays across '+number(summary.artistNames.size)+' artist names with qualifying plays.',detail:'Recorded duration includes positive short events; play rankings require more than 30 seconds.'});
+    const profile=discoveryProfile(summary);
+    if(profile.leader&&profile.artistCount){
+      const share=number(profile.leaderShare*100);
+      slides.push({type:'discovery',eyebrow:'LOYALTY VS DISCOVERY',title:profile.leaderShare>=.5?'You had a clear ride-or-die.':'You kept your options open.',body:profile.leader.name+' represents '+share+'% of your estimated artist play points across '+number(profile.artistCount)+' artists.',detail:'This compares concentration in the leading artist with the number of distinct artists in your records. It is a listening-pattern summary, not a personality diagnosis.'});
+    }
+    const monthly=monthlyHighlights(summary);
+    if(monthly.length){
+      slides.push({type:'monthly',eyebrow:'MONTH BY MONTH',title:'Your soundtrack, month by month.',items:monthly.slice(0,12).map((m,i)=>({rank:i+1,name:m.label,artist:m.topArtist?m.topArtist[0]+' · top artist':'No artist ranking',value:m.topTrack?m.topTrack.name+' · '+number(m.topTrack.plays)+' plays':'No qualifying track'})),body:'Each month shows its most-played primary artist and most-replayed track, using plays longer than 30 seconds.'});
+    }
+    if(monthly.length>=2){
+      const split=Math.ceil(monthly.length/2),early=monthly.slice(0,split),late=monthly.slice(split),sum=x=>x.reduce((n,m)=>n+m.plays,0),earlyArtists=new Set(early.flatMap(m=>[...m.artists.keys()])),lateArtists=new Set(late.flatMap(m=>[...m.artists.keys()]));
+      slides.push({type:'change',eyebrow:'HOW YOUR YEAR SHIFTED',title:'Your rotation didn’t stand still.',body:'Across the first '+early.length+' observed months: '+number(sum(early))+' qualifying plays and '+number(earlyArtists.size)+' artists. Across the later '+late.length+' months: '+number(sum(late))+' plays and '+number(lateArtists.size)+' artists.',detail:'The comparison splits the months present in this export into an earlier and later half. It describes recorded activity only; missing archive periods are not inferred.'});
+    }
     const months=monthBuckets(summary,range).filter(x=>x.ms>0).sort((a,b)=>b.ms-a.ms||a.id.localeCompare(b.id));
     if(months.length)slides.push({type:'month',eyebrow:'LISTENING PATTERNS',title:months[0].label+' was your peak month.',body:minutes(months[0].ms)+' recorded in that UTC calendar month.',detail:'Only timestamped events can be assigned to a month. The selected export may be incomplete.'});
     const peak=hourBuckets(summary).sort((a,b)=>b.ms-a.ms||a.hour-b.hour)[0];
@@ -319,8 +352,8 @@
     slideList=makeStory(summary,range);slideIndex=Math.max(0,Math.min(slideIndex,slideList.length-1));const viewer=$('storyViewer'),slide=slideList[slideIndex]||slideList[0];
     if(!slide)return;
     const items=slide.items||[];
-    const theme=root.document.documentElement.dataset.theme,storyLabels=theme==='y2k'?{lore:'THE LORE DROP ✨',artists:'YOUR RIDE-OR-DIES',tracks:'THE BOPS ON REPEAT',duration:'MAIN-CHARACTER STATS',month:'YOUR MONTHLY ERA',hour:'THE CLOCKED-IN HOURS',closing:'THE FINAL TEA ✧',empty:'NO RECEIPTS, NO CLAIMS'}:theme==='futuristic'?{lore:'ARCHIVE SIGNAL // LORE',artists:'ARTIST NODES',tracks:'TRACK FREQUENCY',duration:'RECORDED DURATION',month:'MONTHLY DISTRIBUTION',hour:'HOURLY SIGNAL',closing:'SEQUENCE COMPLETE',empty:'NO DATA // NO CLAIM'}:{lore:'LISTENING LORE',artists:'TOP ARTISTS',tracks:'TOP SONGS',duration:'LISTENING NUMBERS',month:'MONTHLY SIGNAL',hour:'24-HOUR MIX',closing:'THE FINAL RECEIPT',empty:'NO MATCHING RECORDS'};
-    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img data-artwork-kind="'+(slide.type==='tracks'?'track':'artist')+'" data-artwork-key="'+escapeHTML(slide.type==='tracks'?x.name+'|'+x.artist:x.name)+'" class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
+    const theme=root.document.documentElement.dataset.theme,storyLabels=theme==='y2k'?{lore:'THE LORE DROP ✨',artists:'YOUR RIDE-OR-DIES',tracks:'THE BOPS ON REPEAT',duration:'MAIN-CHARACTER STATS',month:'YOUR MONTHLY ERA',monthly:'MONTHLY TOPS',discovery:'LOYALTY VS DISCOVERY',change:'THE YEAR IN MOTION',hour:'THE CLOCKED-IN HOURS',closing:'THE FINAL TEA ✧',empty:'NO RECEIPTS, NO CLAIMS'}:theme==='futuristic'?{lore:'ARCHIVE SIGNAL // LORE',artists:'ARTIST NODES',tracks:'TRACK FREQUENCY',duration:'RECORDED DURATION',month:'MONTHLY DISTRIBUTION',monthly:'MONTHLY TOPS',discovery:'ARTIST CONCENTRATION',change:'TEMPORAL COMPARISON',hour:'HOURLY SIGNAL',closing:'SEQUENCE COMPLETE',empty:'NO DATA // NO CLAIM'}:{lore:'LISTENING LORE',artists:'TOP ARTISTS',tracks:'TOP SONGS',duration:'LISTENING NUMBERS',month:'MONTHLY SIGNAL',monthly:'MONTHLY TOPS',discovery:'LOYALTY VS DISCOVERY',change:'HOW IT SHIFTED',hour:'24-HOUR MIX',closing:'THE FINAL RECEIPT',empty:'NO MATCHING RECORDS'};
+    $('storyCard').innerHTML='<div class="story-card-inner story-'+escapeHTML(slide.type)+'"><p class="eyebrow">'+escapeHTML(storyLabels[slide.type]||slide.eyebrow)+'</p><div class="story-ornament" aria-hidden="true">'+(slide.type==='lore'?'✳':slide.type==='artists'?'◉':slide.type==='tracks'?'♫':slide.type==='hour'?'◷':slide.type==='monthly'?'▦':slide.type==='discovery'?'◎':'✧')+'</div><h2>'+escapeHTML(slide.title)+'</h2>'+(items.length?'<ol class="story-list">'+items.map(x=>'<li><span>'+String(x.rank).padStart(2,'0')+'</span>'+(x.imageUrl?'<img data-artwork-kind="'+(slide.type==='tracks'?'track':'artist')+'" data-artwork-key="'+escapeHTML(slide.type==='tracks'?x.name+'|'+x.artist:x.name)+'" class="story-item-art" src="'+escapeHTML(x.imageUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<span class="story-item-placeholder" aria-hidden="true">✳</span>')+'<div><strong>'+escapeHTML(x.name)+'</strong>'+(x.artist?'<small>'+escapeHTML(x.artist)+'</small>':'')+'</div><b>'+escapeHTML(x.value)+'</b></li>').join('')+'</ol>':'')+'<p class="story-body">'+escapeHTML(slide.body||'')+'</p>'+(slide.detail?'<p class="story-detail">'+escapeHTML(slide.detail)+'</p>':'')+'<p class="story-caveat">BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE</p></div>';
     $('storyStep').textContent='STORY '+(slideIndex+1)+' / '+slideList.length;
     $('storyProgress').innerHTML=slideList.map((x,i)=>'<span class="'+(i<=slideIndex?'active':'')+'"></span>').join('');
     $('storyProgress').setAttribute('aria-valuenow',String(slideIndex+1));$('storyProgress').setAttribute('aria-valuemax',String(slideList.length));
@@ -385,5 +418,5 @@
     update();
   }
   if(root.document){if(root.document.readyState==='loading')root.document.addEventListener('DOMContentLoaded',init);else init();}
-  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,rangeFor,escapeHTML,visibleRankings,findTrackArtwork,isExactArtistPage,lookupTrackArtwork,trackTitleMatch,artistMatch,validArtworkUrl};
+  return {monthBuckets,hourBuckets,heatmapDays,loreFor,makeStory,monthlyHighlights,discoveryProfile,rangeFor,escapeHTML,visibleRankings,findTrackArtwork,isExactArtistPage,lookupTrackArtwork,trackTitleMatch,artistMatch,validArtworkUrl};
 });
