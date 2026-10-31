@@ -107,7 +107,10 @@
     }
     const monthly=monthlyHighlights(summary);
     if(monthly.length){
-      slides.push({type:'monthly',eyebrow:'MONTH BY MONTH',title:'Your soundtrack, month by month.',items:monthly.slice(0,12).map((m,i)=>({rank:i+1,name:m.label,artist:m.topArtist?m.topArtist[0]+' · top artist':'No artist ranking',value:m.topTrack?m.topTrack.name+' · '+number(m.topTrack.plays)+' plays':'No qualifying track'})),body:'Each month shows its most-played primary artist and most-replayed track, using plays longer than 30 seconds.'});
+      for(let start=0;start<monthly.length;start+=6){
+        const chunk=monthly.slice(start,start+6),first=chunk[0],last=chunk[chunk.length-1];
+        slides.push({type:'monthly',eyebrow:'MONTH BY MONTH',title:first.label+' – '+last.label,items:chunk.map((m,i)=>({rank:start+i+1,name:m.label,artist:m.topArtist?m.topArtist[0]+' · top artist':'No artist ranking',value:m.topTrack?m.topTrack.name+' · '+number(m.topTrack.plays)+' plays':'No qualifying track'})),body:'Each month shows its most-played primary artist and most-replayed track, using plays longer than 30 seconds.'});
+      }
     }
     if(monthly.length>=2){
       const split=Math.ceil(monthly.length/2),early=monthly.slice(0,split),late=monthly.slice(split),sum=x=>x.reduce((n,m)=>n+m.plays,0),earlyArtists=new Set(early.flatMap(m=>[...m.artists.keys()])),lateArtists=new Set(late.flatMap(m=>[...m.artists.keys()]));
@@ -381,7 +384,7 @@
       ctx.fillStyle=ink;ctx.font='700 70px sans-serif';let y=wrapText(ctx,slide.title,72,350,900,80,3)+45;
       ctx.fillStyle=accent;ctx.fillRect(72,y,140,7);y+=70;
       ctx.fillStyle=ink;ctx.font='30px sans-serif';y=wrapText(ctx,slide.body||'',72,y,900,40,3)+25;
-      if(slide.items&&slide.items.length){ctx.font='600 26px sans-serif';for(const x of slide.items.slice(0,5)){ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);const art=await loadCanvasImage(x.imageUrl);const textX=art?222:150;if(art){ctx.save();ctx.beginPath();ctx.rect(145,y-28,58,58);ctx.clip();ctx.drawImage(art,145,y-28,58,58);ctx.restore();}ctx.fillStyle=ink;y=wrapText(ctx,x.name,textX,y,art?650:720,32,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,textX,y,art?650:720,25,1);}ctx.fillStyle=accent;ctx.font='22px monospace';y=wrapText(ctx,x.value,textX,y,760,28,1)+20;ctx.font='600 26px sans-serif';}}
+      if(slide.items&&slide.items.length){ctx.font='600 26px sans-serif';for(const x of slide.items.slice(0,slide.type==='monthly'?6:5)){ctx.fillStyle=alt;ctx.fillText(String(x.rank).padStart(2,'0'),78,y);const art=await loadCanvasImage(x.imageUrl);const textX=art?222:150;if(art){ctx.save();ctx.beginPath();ctx.rect(145,y-28,58,58);ctx.clip();ctx.drawImage(art,145,y-28,58,58);ctx.restore();}ctx.fillStyle=ink;y=wrapText(ctx,x.name,textX,y,art?650:720,32,2);if(x.artist){ctx.fillStyle='#b8b8b8';y=wrapText(ctx,x.artist,textX,y,art?650:720,25,1);}ctx.fillStyle=accent;ctx.font='22px monospace';y=wrapText(ctx,x.value,textX,y,760,28,1)+20;ctx.font='600 26px sans-serif';}}
       if(slide.detail&&y<1630){ctx.fillStyle='#b8b8b8';ctx.font='22px sans-serif';wrapText(ctx,slide.detail,72,Math.min(y+20,1620),900,30,2);}
       ctx.fillStyle='#b8b8b8';ctx.font='22px monospace';wrapText(ctx,'BASED ON IMPORTED HISTORY · MAY BE INCOMPLETE',72,1740,900,32,2);
       ctx.fillStyle=accent;ctx.fillRect(72,1840,936,4);ctx.fillStyle=ink;ctx.font='22px monospace';ctx.fillText((range.label||'Selected range').toUpperCase(),72,1880);
