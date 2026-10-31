@@ -105,13 +105,30 @@ function artistsOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.artists||[]}
 function msOf(r){return WrappedAnalytics.normalizeRecord(r,0)?.durationMs||0}
 function rowsOf(x){return WrappedAnalytics.rowsOf(x)}
 async function loadFiles(files){
- const results=[];
- for(const f of [...files]){
-  try{results.push({name:f.name,size:f.size,lastModified:f.lastModified,data:JSON.parse(await f.text())})}
-  catch{results.push({name:f.name,error:'Invalid JSON or unreadable file'})}
+ const results=[],errors=[];
+ for(const file of [...files]){
+  if(/\.zip$/i.test(file.name)){
+   if(!window.JSZip){errors.push(file.name+': ZIP reader failed to load. Refresh and try again.');continue;}
+   try{
+    const archive=await JSZip.loadAsync(file);
+    const entries=Object.values(archive.files).filter(entry=>!entry.dir&&/\.json$/i.test(entry.name)&&/(streaming.?history|endsong|audio.?history)/i.test(entry.name));
+    if(!entries.length){errors.push(file.name+': no Spotify streaming-history JSON files were found inside this ZIP.');continue;}
+    if(entries.length>200){errors.push(file.name+': too many JSON files (maximum 200 per ZIP).');continue;}
+    for(const entry of entries){
+     try{
+      const text=await entry.async('string');
+      if(text.length>100*1024*1024){errors.push(entry.name+': file exceeds the 100 MB safety limit.');continue;}
+      results.push({name:entry.name,size:text.length,lastModified:file.lastModified,data:JSON.parse(text)});
+     }catch(_){results.push({name:entry.name,error:'Invalid JSON or unreadable file'});}
+    }
+   }catch(_){errors.push(file.name+': could not open this ZIP. Make sure it is a valid Spotify Extended Streaming History archive.');}
+  }else if(/\.json$/i.test(file.name)){
+   try{results.push({name:file.name,size:file.size,lastModified:file.lastModified,data:JSON.parse(await file.text())});}
+   catch{results.push({name:file.name,error:'Invalid JSON or unreadable file'});}
+  }else errors.push(file.name+': choose a Spotify ZIP or history JSON file.');
  }
  const parsed=WrappedAnalytics.inspectFiles(results);
- const errors=[...parsed.diagnostics.invalidFiles.map(x=>x.name+': '+x.reason),...parsed.diagnostics.unrecognizedFiles.map(x=>x+': no recognized Spotify history array; choose an Extended Streaming History JSON file.'),...parsed.diagnostics.emptyFiles.map(x=>x+': recognized history file contains zero records.')];
+ errors.push(...parsed.diagnostics.invalidFiles.map(x=>x.name+': '+x.reason),...parsed.diagnostics.unrecognizedFiles.map(x=>x+': no recognized Spotify history array.'),...parsed.diagnostics.emptyFiles.map(x=>x+': recognized history file contains zero records.'));
  return{rows:parsed.rows,errors,count:files.length,diagnostics:parsed.diagnostics};
 }
 function summarize(rows){
@@ -276,13 +293,13 @@ function downloadCard(){
   },'image/png');
  }catch(error){$('fileStatus').textContent='Image export failed: '+(error&&error.message?error.message:'unsupported canvas operation')+'. Your listening history was not uploaded.'}
 }
-function renderMine(rows,count,diagnostics){myHistoryRows=rows.slice();window.dispatchEvent(new CustomEvent('wrapped-history-updated',{detail:{rows:myHistoryRows,diagnostics}}));mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides();renderLifetimeAnalytics();$('fileStatus').textContent='Read '+count+' selected JSON file(s) locally. '+fmt(diagnostics?.acceptedRecords??rows.length)+' source records accepted; '+fmt(diagnostics?.rejectedRecords??0)+' rejected. Detailed diagnostics are available below. No files leave this browser.';$('importDiagnosticsDetail').textContent=['Files selected: '+fmt(diagnostics?.filesSelected??count),'Recognized history files: '+fmt(diagnostics?.filesParsed??count),'Accepted records: '+fmt(diagnostics?.acceptedRecords??rows.length),'Rejected non-object records: '+fmt(diagnostics?.rejectedRecords??0),'Missing/invalid timestamps: '+fmt(diagnostics?.invalidTimestamps??0),'Missing track metadata: '+fmt(diagnostics?.missingTrack??0),'Missing artist metadata: '+fmt(diagnostics?.missingArtist??0),'Missing duration: '+fmt(diagnostics?.missingDuration??0),'Malformed/negative duration: '+fmt(diagnostics?.invalidDuration??0),'Zero-duration records: '+fmt(diagnostics?.zeroDuration??0),'Episode/audiobook-marked records: '+fmt(diagnostics?.excludedNonMusic??0),'Possible duplicate file selections (retained): '+fmt(diagnostics?.possibleDuplicateFiles?.length??0),...(diagnostics?.invalidFiles||[]).map(x=>x.name+': '+x.reason),...(diagnostics?.unrecognizedFiles||[]).map(x=>x+': unrecognized history structure'),...(diagnostics?.emptyFiles||[]).map(x=>x+': recognized but empty'),...(diagnostics?.warnings||[])].join('\n');renderCompare()}
+function renderMine(rows,count,diagnostics){myHistoryRows=rows.slice();window.dispatchEvent(new CustomEvent('wrapped-history-updated',{detail:{rows:myHistoryRows,diagnostics}}));mine=summarize(rows);const s=mine;$('minutesStat').textContent=fmt(Math.floor(s.total/60000));$('hoursStat').textContent=hoursText(s.total)+' recorded';$('artistsStat').textContent=fmt(s.artistNames.size);$('playsStat').textContent=fmt(s.plays);$('topTrackStat').textContent=s.tracks[0]?.name||'No track data';$('topTrackArtist').textContent=s.tracks[0]?.artist||'Check selected JSON files';$('dataBadge').textContent=s.plays?'2026 DATA LOADED':'NO 2026 PLAYS FOUND';renderRank('topArtists',s.artists,'artist');renderRank('topTracks',s.tracks,'track');renderHeat(s);renderMonths(s);renderAwards(s);buildSlides();renderLifetimeAnalytics();$('fileStatus').textContent='Read '+count+' selected archive/file(s) locally. '+fmt(diagnostics?.acceptedRecords??rows.length)+' source records accepted; '+fmt(diagnostics?.rejectedRecords??0)+' rejected. Detailed diagnostics are available below. No files leave this browser.';$('importDiagnosticsDetail').textContent=['Files selected: '+fmt(diagnostics?.filesSelected??count),'Recognized history files: '+fmt(diagnostics?.filesParsed??count),'Accepted records: '+fmt(diagnostics?.acceptedRecords??rows.length),'Rejected non-object records: '+fmt(diagnostics?.rejectedRecords??0),'Missing/invalid timestamps: '+fmt(diagnostics?.invalidTimestamps??0),'Missing track metadata: '+fmt(diagnostics?.missingTrack??0),'Missing artist metadata: '+fmt(diagnostics?.missingArtist??0),'Missing duration: '+fmt(diagnostics?.missingDuration??0),'Malformed/negative duration: '+fmt(diagnostics?.invalidDuration??0),'Zero-duration records: '+fmt(diagnostics?.zeroDuration??0),'Episode/audiobook-marked records: '+fmt(diagnostics?.excludedNonMusic??0),'Possible duplicate file selections (retained): '+fmt(diagnostics?.possibleDuplicateFiles?.length??0),...(diagnostics?.invalidFiles||[]).map(x=>x.name+': '+x.reason),...(diagnostics?.unrecognizedFiles||[]).map(x=>x+': unrecognized history structure'),...(diagnostics?.emptyFiles||[]).map(x=>x+': recognized but empty'),...(diagnostics?.warnings||[])].join('\n');renderCompare()}
 function compare(){if(!mine||!friend)return;const aa=new Set(mine.artists.map(x=>x.name.toLocaleLowerCase())),ba=new Set(friend.artists.map(x=>x.name.toLocaleLowerCase())),at=new Set(mine.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),bt=new Set(friend.tracks.map(x=>(x.name+'\u0000'+x.artist).toLocaleLowerCase())),sa=[...aa].filter(x=>ba.has(x)),st=[...at].filter(x=>bt.has(x)),combined=new Set([...aa,...ba]);return{sa,st,overlap:Math.round(sa.length/Math.max(1,combined.size)*100)}}
 function renderCompare(){const el=$('compareResults');el.replaceChildren();if(!mine||!friend){el.hidden=true;return}const s=compare();[[fmt(s.sa.length),'SHARED ARTISTS'],[fmt(s.st.length),'SHARED TRACKS'],[s.overlap+'%','ARTIST OVERLAP']].forEach(([v,l])=>{const card=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');card.className='compare-metric';strong.textContent=v;span.textContent=l;card.append(strong,span);el.append(card)});const detail=document.createElement('div'),h=document.createElement('h4'),p=document.createElement('p');detail.className='compare-shared';h.textContent='Your shared soundtrack';p.textContent=s.st.length?s.st.slice(0,12).map(x=>x.replace('\u0000',' — ')).join(' · '):'No matching track + artist names found in the selected 2026 records.';detail.append(h,p);el.append(detail);el.hidden=false}
 $('historyFiles').addEventListener('change',async e=>{
  if(!e.target.files?.length)return;
  const token=++mineImportToken,files=[...e.target.files];e.target.value='';
- $('fileStatus').textContent='Reading selected files locally…';
+ $('fileStatus').textContent='Opening your ZIP and reading its history locally…';
  let r;
  try{r=await loadFiles(files);}catch(error){if(token!==mineImportToken)return;$('resetData').click();$('fileStatus').textContent='Could not read the selected files. Check that they are valid JSON files and try again.';return;}
  if(token!==mineImportToken)return;
